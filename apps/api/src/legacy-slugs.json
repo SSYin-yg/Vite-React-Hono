@@ -1,0 +1,59 @@
+{
+  "c-jaw": {
+    "new_slug": "c-type-jaw-crusher"
+  },
+  "dewatering-screen": {
+    "new_slug": "vibrating-dewatering-screen"
+  },
+  "double-rotor-sand": {
+    "new_slug": "double-rotor-sand-making-machine"
+  },
+  "double-spiral-washer": {
+    "new_slug": "double-spiral-sand-washer"
+  },
+  "gyratory": {
+    "new_slug": "gyratory-crusher"
+  },
+  "hammer-heads": {
+    "new_slug": "crusher-hammer-heads"
+  },
+  "hammer-shaft": {
+    "new_slug": "crusher-hammer-shaft"
+  },
+  "heavy-hammer": {
+    "new_slug": "heavy-hammer-crusher"
+  },
+  "linear-screen": {
+    "new_slug": "linear-vibrating-screen"
+  },
+  "multi-cylinder-cone": {
+    "new_slug": "multi-cylinder-hydraulic-cone-crusher"
+  },
+  "pe-jaw": {
+    "new_slug": "pe-series-jaw-crusher-standard"
+  },
+  "screen-mesh": {
+    "new_slug": "vibrating-screen-mesh"
+  },
+  "shaping": {
+    "new_slug": "shaping-crusher"
+  },
+  "single-cylinder-cone": {
+    "new_slug": "single-cylinder-hydraulic-cone-crusher"
+  },
+  "vsi": {
+    "new_slug": "vsi-impact-crusher"
+  },
+  "wheel-scoop-washer": {
+    "new_slug": "wheel-and-scoop-sand-washer"
+  },
+  "wheeled-impact": {
+    "new_slug": "wheel-type-impact-mobile-crushing-station"
+  },
+  "wheeled-multi-cone": {
+    "new_slug": "wheel-type-multi-cylinder-cone-mobile-crushing-station"
+  },
+  "wheeled-single-cone": {
+    "new_slug": "wheel-type-single-cylinder-cone-mobile-crushing-station"
+  }
+}

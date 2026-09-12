@@ -1,0 +1,97 @@
+/* 仅保留 React 版特有组件的补充样式（全局视觉来自旧站 common/home/catalog/pages/faq/product.css） */
+
+/* 设备详情页（React 版） */
+.detail { padding: 28px 0 60px; }
+.detail-head { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.detail-gallery { flex: 1 1 380px; display: flex; gap: 10px; flex-wrap: wrap; }
+.detail-gallery img {
+  width: 100%; max-width: 460px; border-radius: 10px; border: 1px solid #e3e8e7; display: block;
+}
+.detail-info { flex: 1 1 320px; }
+.detail-info .crumbs { color: #849096; font-size: 13px; margin-bottom: 8px; }
+.detail-info .crumbs a { color: inherit; }
+.detail-info .lang-jump { margin-left: 12px; }
+.detail-info h1 { margin: 0 0 10px; }
+.detail-info .desc { white-space: pre-line; color: #4a555c; line-height: 1.8; }
+.detail-section { margin-top: 36px; }
+.detail-section h2 {
+  font-size: 20px; margin: 0 0 14px; padding-left: 12px;
+  border-left: 4px solid var(--yellow, #e4b454);
+}
+.detail-section ul { margin: 0; padding-left: 20px; line-height: 2; color: #4a555c; }
+
+.spec-table { border-collapse: collapse; width: 100%; margin: 0; }
+.spec-table th, .spec-table td {
+  border: 1px solid #e3e8e7; padding: 9px 14px; text-align: left; font-size: 14px;
+}
+.spec-table th { background: #f6f8fb; width: 38%; }
+.table-scroll { overflow-x: auto; }
+
+/* 详情页询盘表单（React 版） */
+.inquiry-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 760px; }
+.inquiry-form .wide { grid-column: 1 / -1; }
+.inquiry-form label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; color: #33424a; }
+.inquiry-form input, .inquiry-form textarea {
+  border: 1px solid #d8dedf; border-radius: 6px; padding: 10px 12px; font: inherit; outline: none;
+}
+.inquiry-form input:focus, .inquiry-form textarea:focus { border-color: #e4b454; }
+.inquiry-form button {
+  grid-column: 1 / -1; justify-self: start; background: #12314a; color: #fff;
+  border: 0; border-radius: 6px; padding: 12px 28px; cursor: pointer; font: inherit;
+}
+.inquiry-form button:disabled { opacity: .6; }
+.error { color: #c0392b; }
+.ok { color: #1e8e3e; font-weight: 600; }
+
+/* 询盘表单：字段级错误与字数提示（公开页 + 弹窗共用） */
+.inquiry-form .field-error,
+.modal .field-error {
+  color: #c0392b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.inquiry-form .char-count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: #849096;
+}
+.inquiry-form input[aria-invalid="true"],
+.inquiry-form textarea[aria-invalid="true"] {
+  border-color: #c0392b;
+}
+
+/* 设备目录分页（React 版） */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0 8px;
+}
+.pager-btn {
+  min-width: 40px;
+  padding: 9px 14px;
+  border: 1px solid #d8dedf;
+  background: #fff;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  color: #33424a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.pager-btn:hover:not(:disabled) { border-color: #12314a; }
+.pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pager-btn.is-active {
+  background: #12314a;
+  border-color: #12314a;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(18, 49, 74, 0.22);
+}
+.pager-gap { color: #849096; padding: 0 4px; }

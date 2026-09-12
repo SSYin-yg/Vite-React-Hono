@@ -1,0 +1,72 @@
+export const adminTr = (lang: 'zh' | 'en') => {
+  const dict = {
+    zh: {
+      title: '管理后台',
+      logout: '退出',
+      back: '返回',
+      nav: { overview: '总览', equipment: '设备', inquiry: '询盘', settings: '站点设置' },
+      common: { loading: '加载中…', retry: '重试', refresh: '刷新' },
+      topbar: { menu: '菜单', root: '后台', theme: '切换主题', view_site: '查看前台', account: '管理员', new: '新增', edit: '编辑', import: '导入' },
+      ov: {
+        equipment_total: '设备总数', published: '已发布', draft: '未发布',
+        inquiries: '询盘总数', unreplied: '未回复', categories: '设备分类', online: '上线率',
+        recent: '最近询盘', recent_empty: '暂无询盘记录', quick: '快捷操作', by_category: '分类分布',
+      },
+      login: { title: '管理员登录', placeholder: '请输入 ADMIN_TOKEN', submit: '进入后台', err_required: '请输入令牌', err_auth: '令牌无效：请确认 apps/api/.dev.vars 的 ADMIN_TOKEN 与输入一致（大小写敏感；改完必须重启 npm run dev）', err_not_configured: '后端未配置 ADMIN_TOKEN：请在 apps/api/.dev.vars（或 wrangler secret）中设置', err_network: '无法连接 API（localhost:8787），请确认 npm run dev 同时起了 API', foot: 'Minelink B2B · 仅限授权人员访问' },
+      equipment: { add: '新增设备', edit: '编辑设备', delete: '删除设备', confirm_delete: '确认删除？此操作不可恢复。', saved: '已保存', import: '导入设备', import_desc: '粘贴 JSON 数组（每项一个设备，字段同「新增设备」），或上传 .json 文件。', download_template: '下载模板', upload_file: '上传文件', paste_json: '在此粘贴 JSON 数组…', import_btn: '开始导入', import_done: '导入完成', save_failed: '保存失败', load_failed: '加载失败', json_error: 'JSON 解析失败：', view: '查看前台', publish: '发布', unpublish: '下架', published: '已发布', draft: '未发布', save_view: '保存并查看前台', search: '搜索 Slug / 名称…', filter_all_cat: '全部分类', total: '共', empty: '没有匹配的设备', group_basic: '基本信息', group_content: '内容', group_specs: '参数与型号表', fields: { slug: 'Slug', category: '分类', name: '名称', image: '图片路径', summary: '简介', features: '特性（每行一条）', specs: '参数（JSON数组，每行一项）', model_tables: '型号表（JSON 数组）', published: '发布', sort: '排序', seo: 'SEO 设置（选填）', seo_title: 'SEO 标题', seo_desc: 'SEO 描述', seo_keywords: 'SEO 关键词（逗号分隔）' } },
+      inquiry: { empty: '暂无询盘', contact: '联系方式', message: '留言', search: '搜索姓名/邮箱/设备/留言…', refresh: '刷新', filter_all: '全部', filter_unreplied: '未回复', filter_replied: '已回复', filter_sent: '邮件已发', filter_failed: '邮件失败', col_name: '姓名', col_phone: '电话', col_equip: '设备', col_country: '国家', col_date: '时间', col_status: '状态', replied: '已回复', unreplied: '未回复', mail_pending: '待发', mail_sent: '邮件已发', mail_failed: '邮件失败', mail_skipped: '未配置', mark_replied: '标记已回复', mark_unreplied: '取消已回复', load_more: '加载更多', total: '共' },
+      settings: {
+        add: '新增键', key: '键', value: '值', save: '保存', delete: '删除', saved: '已保存', save_failed: '保存失败', empty: '暂无站点设置', confirm_delete: '确认删除该配置项？',
+        group_basic: '站点与联系信息', group_ads: 'Google Ads 广告代码', group_other: '其它配置项',
+        hint: '这些键会影响前台显示：site_name_zh / site_name_en（品牌名）、site_description_zh / site_description_en（页脚与默认描述）、contact_phone / contact_email / contact_address（页脚联系方式）、contact_whatsapp / contact_telegram（右下角悬浮客服按钮）。保存后刷新前台即可生效。',
+        ads_hint: '填写「Google Ads / gtag ID」（形如 AW-123456789）后，前台会自动注入统计代码；再填「转化标签」，访客提交询盘即自动上报转化。自定义代码仅管理员可维护，请谨慎填写。',
+        k: {
+          site_name_zh: '站点名称（中文）', site_name_en: '站点名称（英文）',
+          site_description_zh: '站点描述（中文）', site_description_en: '站点描述（英文）',
+          contact_phone: '联系电话', contact_email: '联系邮箱', contact_address: '联系地址',
+contact_whatsapp: 'WhatsApp（号码或 wa.me 链接）', contact_telegram: 'Telegram（用户名或 t.me 链接）',
+          google_ads_enabled: '启用（1=开，0=关）',
+          google_ads_id: 'Google Ads / gtag ID（AW-xxx / G-xxx）',
+          google_ads_conversion_label: '转化标签 Conversion label',
+          google_ads_head_code: '自定义 Head 代码（JS）',
+          google_ads_body_code: '自定义 Body 代码（HTML，通常是 noscript）',
+        },
+      },
+    },
+    en: {
+      title: 'Admin',
+      logout: 'Logout',
+      back: 'Back',
+      nav: { overview: 'Overview', equipment: 'Equipment', inquiry: 'Inquiries', settings: 'Site Settings' },
+      common: { loading: 'Loading…', retry: 'Retry', refresh: 'Refresh' },
+      topbar: { menu: 'Menu', root: 'Admin', theme: 'Toggle theme', view_site: 'View site', account: 'Admin', new: 'New', edit: 'Edit', import: 'Import' },
+      ov: {
+        equipment_total: 'Total equipment', published: 'Published', draft: 'Draft',
+        inquiries: 'Total inquiries', unreplied: 'Unreplied', categories: 'Categories', online: 'Live',
+        recent: 'Recent inquiries', recent_empty: 'No inquiries yet', quick: 'Quick actions', by_category: 'By category',
+      },
+      login: { title: 'Admin Login', placeholder: 'Enter ADMIN_TOKEN', submit: 'Sign in', err_required: 'Token required', err_auth: 'Invalid token: check ADMIN_TOKEN in apps/api/.dev.vars (case-sensitive; restart npm run dev after editing)', err_not_configured: 'ADMIN_TOKEN is not set: add it to apps/api/.dev.vars or via wrangler secret', err_network: 'Cannot reach API (8787): make sure npm run dev starts both API and Web', foot: 'Minelink B2B · Authorized access only' },
+      equipment: { add: 'Add equipment', edit: 'Edit equipment', delete: 'Delete', confirm_delete: 'Delete? This cannot be undone.', saved: 'Saved', import: 'Import equipment', import_desc: 'Paste a JSON array (one object per equipment, same fields as Add equipment), or upload a .json file.', download_template: 'Download template', upload_file: 'Upload file', paste_json: 'Paste JSON array here…', import_btn: 'Import', import_done: 'Import done', save_failed: 'Save failed', load_failed: 'Load failed', json_error: 'Invalid JSON:', view: 'View live', publish: 'Publish', unpublish: 'Unpublish', published: 'Published', draft: 'Draft', save_view: 'Save & view live', search: 'Search slug / name…', filter_all_cat: 'All categories', total: 'Total', empty: 'No equipment matches', group_basic: 'Basics', group_content: 'Content', group_specs: 'Specs & model tables', fields: { slug: 'Slug', category: 'Category', name: 'Name', image: 'Image path', summary: 'Summary', features: 'Features (one per line)', specs: 'Specs (JSON array)', model_tables: 'Model tables (JSON array)', published: 'Published', sort: 'Sort', seo: 'SEO (optional)', seo_title: 'SEO title', seo_desc: 'SEO description', seo_keywords: 'SEO keywords (comma separated)' } },
+      inquiry: { empty: 'No inquiries', contact: 'Contact', message: 'Message', search: 'Search name/email/equipment/message…', refresh: 'Refresh', filter_all: 'All', filter_unreplied: 'Unreplied', filter_replied: 'Replied', filter_sent: 'Email sent', filter_failed: 'Email failed', col_name: 'Name', col_phone: 'Phone', col_equip: 'Equipment', col_country: 'Country', col_date: 'Date', col_status: 'Status', replied: 'Replied', unreplied: 'Unreplied', mail_pending: 'Pending', mail_sent: 'Sent', mail_failed: 'Failed', mail_skipped: 'No mail', mark_replied: 'Mark replied', mark_unreplied: 'Unmark', load_more: 'Load more', total: 'Total' },
+      settings: {
+        add: 'Add key', key: 'Key', value: 'Value', save: 'Save', delete: 'Delete', saved: 'Saved', save_failed: 'Save failed', empty: 'No site settings', confirm_delete: 'Delete this setting?',
+        group_basic: 'Site & contact', group_ads: 'Google Ads', group_other: 'Other keys',
+        hint: 'These keys drive the public site: site_name_zh / site_name_en (brand), site_description_zh / site_description_en (footer & default description), contact_phone / contact_email / contact_address (footer contact), contact_whatsapp / contact_telegram (floating contact widget). Refresh the site to see changes.',
+        ads_hint: 'Set "Google Ads / gtag ID" (e.g. AW-123456789) and the tracking code is injected automatically. Add a "Conversion label" and every inquiry submission reports a conversion. Custom code is admin-only — use with care.',
+        k: {
+          site_name_zh: 'Site name (CN)', site_name_en: 'Site name (EN)',
+          site_description_zh: 'Site description (CN)', site_description_en: 'Site description (EN)',
+          contact_phone: 'Contact phone', contact_email: 'Contact email', contact_address: 'Contact address',
+contact_whatsapp: 'WhatsApp (number or wa.me link)', contact_telegram: 'Telegram (username or t.me link)',
+          google_ads_enabled: 'Enabled (1 = on, 0 = off)',
+          google_ads_id: 'Google Ads / gtag ID (AW-xxx / G-xxx)',
+          google_ads_conversion_label: 'Conversion label',
+          google_ads_head_code: 'Custom head code (JS)',
+          google_ads_body_code: 'Custom body code (HTML, usually noscript)',
+        },
+      },
+    },
+  } as const;
+  return dict[lang];
+};
+export type AdminDict = ReturnType<typeof adminTr>;
