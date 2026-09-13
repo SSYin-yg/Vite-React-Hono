@@ -1,16 +1,16 @@
-# upload.ps1 - Git 自动配置身份、远程仓库、提交与推送脚本
 # 修复 PowerShell 中文乱码
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+param (
+    [string]$msg = ""
+)
+
 # ===== 请在此处填写你的 GitHub 配置信息 =====
 $GithubEmail = "ssyin033@yeah.net"
 $GithubName  = "SSYin-yg"
 $RepoUrl     = "https://github.com/SSYin-yg/Vite-React-Hono.git"
 $BranchName  = "main"
 # ===========================================
-
-param (
-    [string]$msg = ""
-)
 
 # 1. 检查并配置 Git 身份信息
 $currentEmail = git config user.email
@@ -23,7 +23,7 @@ if ([string]::IsNullOrWhiteSpace($currentEmail)) {
 
 if ([string]::IsNullOrWhiteSpace($currentName)) {
     Write-Host "检测到未配置用户名，正在配置: $GithubName" -ForegroundColor Yellow
-    git config --global user.name $GithubName
+    git config --global user.name $GitHubName
 }
 
 # 2. 检查并自动配置远程仓库关联
@@ -62,4 +62,6 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "`n[Error] 推送失败，请检查上方报错信息。" -ForegroundColor Red
 }
+
+# 防止双击运行直接闪退，等待用户按回车后关闭
 Read-Host "按回车键退出..."
