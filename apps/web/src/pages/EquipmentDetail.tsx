@@ -55,6 +55,38 @@ export default function EquipmentDetail() {
   const features = lang === 'zh' ? item.features.zh : item.features.en;
   const otherBase = lang === 'zh' ? '/en' : '';
 
+  const intro = item.intro ?? [];
+  const specs = item.specs ?? [];
+  const modelTables = item.modelTables ?? [];
+
+  const zh = lang === 'zh';
+  const L = {
+    intro: zh ? '产品介绍' : 'Product Introduction',
+    specs: zh ? '主要参数' : 'Specifications',
+    models: zh ? '型号表' : 'Models',
+    inquiry: zh ? '询盘' : 'Inquiry',
+    toc: zh ? '本页目录' : 'On this page',
+  };
+
+  /**
+   * h 标签导航：按详情页实际渲染顺序收集锚点（h2 = 一级、h3 = 二级）。
+   * id 规则必须与 prerender.ts 的 buildBody 保持一致，否则 SSR 首屏锚点会失效。
+   */
+  const toc: { id: string; label: string; sub: boolean }[] = [];
+  if (intro.length) {
+    toc.push({ id: 'intro', label: L.intro, sub: false });
+    intro.forEach((b, i) => {
+      const h = (zh ? b.title_zh : b.title_en).trim();
+      if (h) toc.push({ id: `intro-${i + 1}`, label: h, sub: true });
+    });
+  }
+  if (specs.length) toc.push({ id: 'specs', label: L.specs, sub: false });
+  modelTables.forEach((tb, i) => {
+    const title = (zh ? tb.title_zh : tb.title_en).trim();
+    toc.push({ id: `models-${i + 1}`, label: title || `${L.models} ${i + 1}`, sub: false });
+  });
+  toc.push({ id: 'inquiry', label: L.inquiry, sub: false });
+
   return (
     <main className="detail">
       <div className="shell">
@@ -82,14 +114,50 @@ export default function EquipmentDetail() {
           </div>
         </div>
 
-        {item.specs.length > 0 && (
-          <section className="detail-section">
-            <h2>{lang === 'zh' ? '主要参数' : 'Specifications'}</h2>
+        {/* h 标签导航：由页面实际渲染的 h2/h3 生成，点击跳转对应锚点 */}
+        {toc.length >= 2 && (
+          <nav className="detail-toc" aria-label={L.toc}>
+            <span className="detail-toc-title">{L.toc}</span>
+            <ul>
+              {toc.map((it) => (
+                <li key={it.id} className={it.sub ? 'is-sub' : undefined}>
+                  <a href={`#${it.id}`}>{it.label}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
+        {/* 产品介绍：每个段落块渲染为 h3（锚点）+ 正文 */}
+        {intro.length > 0 && (
+          <section className="detail-section" id="intro">
+            <h2>{L.intro}</h2>
+            {intro.map((b, i) => {
+              const heading = (zh ? b.title_zh : b.title_en).trim();
+              const body = (zh ? b.body_zh : b.body_en).trim();
+              if (!heading && !body) return null;
+              return (
+                <div className="intro-block" key={i} id={`intro-${i + 1}`}>
+                  {heading && <h3>{heading}</h3>}
+                  {body
+                    .split(/\n\s*\n/)
+                    .map((p) => p.trim())
+                    .filter(Boolean)
+                    .map((p, j) => <p key={j}>{p}</p>)}
+                </div>
+              );
+            })}
+          </section>
+        )}
+
+        {specs.length > 0 && (
+          <section className="detail-section" id="specs">
+            <h2>{L.specs}</h2>
             <table className="spec-table">
               <tbody>
-                {item.specs.map((s) => (
-                  <tr key={s.k_en}>
-                    <th>{lang === 'zh' ? s.k_zh : s.k_en}</th>
+                {specs.map((s, i) => (
+                  <tr key={i}>
+                    <th>{zh ? s.k_zh : s.k_en}</th>
                     <td>{s.v}</td>
                   </tr>
                 ))}
@@ -98,13 +166,13 @@ export default function EquipmentDetail() {
           </section>
         )}
 
-        {item.modelTables.map((tb, i) => (
-          <section className="detail-section" key={i}>
-            <h2>{lang === 'zh' ? tb.title_zh : tb.title_en}</h2>
+        {modelTables.map((tb, i) => (
+          <section className="detail-section" id={`models-${i + 1}`} key={i}>
+            <h2>{(zh ? tb.title_zh : tb.title_en) || `${L.models} ${i + 1}`}</h2>
             <div className="table-scroll">
               <table className="spec-table">
                 <thead>
-                  <tr>{tb.columns.map((c, j) => <th key={j}>{lang === 'zh' ? c.zh : c.en}</th>)}</tr>
+                  <tr>{tb.columns.map((c, j) => <th key={j}>{zh ? c.zh : c.en}</th>)}</tr>
                 </thead>
                 <tbody>
                   {tb.rows.map((row, j) => (
@@ -116,8 +184,8 @@ export default function EquipmentDetail() {
           </section>
         ))}
 
-        <section className="detail-section">
-          <h2>{lang === 'zh' ? '询盘' : 'Inquiry'}</h2>
+        <section className="detail-section" id="inquiry">
+          <h2>{L.inquiry}</h2>
           <InquiryForm equipment={item.id} />
           <button type="button" className="primary" style={{ marginTop: 16 }} onClick={() => openQuote(name)}>
             {t('nav.quote')}

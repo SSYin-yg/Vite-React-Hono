@@ -17,6 +17,7 @@ type EquipmentRow = {
   features_en: string;
   specs: string;
   model_tables: string;
+  intro: string;
   seo_title_cn: string;
   seo_title_en: string;
   seo_desc_cn: string;
@@ -42,6 +43,8 @@ const parse = (row: EquipmentRow) => ({
   },
   specs: JSON.parse(row.specs),
   modelTables: JSON.parse(row.model_tables),
+  // 产品介绍：结构化段落块（老数据无该列时回退空数组）
+  intro: JSON.parse(row.intro ?? '[]'),
   seo: {
     title: { zh: row.seo_title_cn ?? '', en: row.seo_title_en ?? '' },
     desc: { zh: row.seo_desc_cn ?? '', en: row.seo_desc_en ?? '' },
@@ -70,8 +73,12 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // 写入时的列顺序（create 与 import 共用）
 const INSERT_COLS =
   '(id, name_cn, name_en, category, images, desc_cn, desc_en, ' +
-  'features_cn, features_en, specs, model_tables, ' +
+  'features_cn, features_en, specs, model_tables, intro, ' +
   'seo_title_cn, seo_title_en, seo_desc_cn, seo_desc_en, seo_keywords, published)';
+
+/** INSERT 占位符：与 INSERT_COLS 列数严格一一对应（改列必须同步改这里） */
+const INSERT_PLACEHOLDERS =
+  '(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)';
 
 const bindValues = (b: Record<string, unknown>) => {
   const j = (v: unknown) => JSON.stringify(v ?? []);
@@ -88,6 +95,7 @@ const bindValues = (b: Record<string, unknown>) => {
     j(b.features_en),
     j(b.specs),
     j(b.model_tables),
+    j(b.intro),
     s(b.seo_title_zh),
     s(b.seo_title_en),
     s(b.seo_desc_zh),
@@ -204,7 +212,7 @@ app.post('/admin/equipments', async (c) => {
   if (exists) return c.json({ error: 'id already exists' }, 409);
 
   await c.env.DB.prepare(
-    `INSERT INTO equipment ${INSERT_COLS} VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)`
+    `INSERT INTO equipment ${INSERT_COLS} VALUES ${INSERT_PLACEHOLDERS}`
   )
     .bind(...(bindValues(body) as (string | number)[]))
     .run();
@@ -219,12 +227,12 @@ app.post('/admin/equipments/import', async (c) => {
 
   const stmts = items.map((raw) =>
     c.env.DB.prepare(
-      `INSERT INTO equipment ${INSERT_COLS} VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
+      `INSERT INTO equipment ${INSERT_COLS} VALUES ${INSERT_PLACEHOLDERS}
        ON CONFLICT(id) DO UPDATE SET
          name_cn=excluded.name_cn, name_en=excluded.name_en, category=excluded.category,
          images=excluded.images, desc_cn=excluded.desc_cn, desc_en=excluded.desc_en,
          features_cn=excluded.features_cn, features_en=excluded.features_en,
-         specs=excluded.specs, model_tables=excluded.model_tables,
+         specs=excluded.specs, model_tables=excluded.model_tables, intro=excluded.intro,
          seo_title_cn=excluded.seo_title_cn, seo_title_en=excluded.seo_title_en,
          seo_desc_cn=excluded.seo_desc_cn, seo_desc_en=excluded.seo_desc_en,
          seo_keywords=excluded.seo_keywords,
@@ -271,6 +279,7 @@ app.put('/admin/equipments/:slug', async (c) => {
     features_en: 'features_en',
     specs: 'specs',
     model_tables: 'model_tables',
+    intro: 'intro',
   };
   for (const [k, col] of Object.entries(jsonMap)) {
     if (k in body) {

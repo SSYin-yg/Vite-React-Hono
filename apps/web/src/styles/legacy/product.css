@@ -1,0 +1,158 @@
+/* Equipment detail page */
+.product-page{padding:48px 0 72px}
+.product-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:start}
+
+/* Gallery —— 正方形图框、白底、图片居中 */
+.gallery{position:sticky;top:96px}
+.gallery-main{position:relative;aspect-ratio:1/1;background:#fff;border:1px solid #e3e8e7;overflow:hidden;display:grid;place-items:center}
+.gallery-main img{width:100%;height:100%;object-fit:contain;display:block;padding:18px}
+.gallery-main .placeholder{position:absolute;inset:0;display:grid;place-items:center;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(244,187,33,.14) 22px 24px),#fff;color:rgba(0,0,0,.22);font:700 64px "Barlow Condensed";letter-spacing:2px}
+.gallery-thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.gallery-thumbs button{width:60px;height:60px;padding:0;border:2px solid #e3e8e7;background:#fff;cursor:pointer;overflow:hidden;position:relative;display:grid;place-items:center}
+.gallery-thumbs button.active,.gallery-thumbs button:hover{border-color:var(--yellow)}
+.gallery-thumbs img{width:100%;height:100%;object-fit:contain;display:block;padding:4px}
+.gallery-thumbs .thumb-ph{position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(244,187,33,.12) 10px 12px),#f0f3f2}
+
+/* Info panel */
+.product-type{font:700 12px "Barlow Condensed";letter-spacing:1.6px;color:#a8680a;margin:0 0 8px}
+.product-title{font-size:32px;letter-spacing:-.8px;margin:0 0 12px;line-height:1.25}
+.product-desc{color:#5e6b73;font-size:14px;line-height:1.85;margin:0 0 22px}
+.product-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.product-actions .primary{padding:12px 22px}
+.product-actions .ghost{padding:11px 18px;border:1px solid #cfd6d8;background:#fff;color:#1a2528;font-weight:700;font-size:14px;cursor:pointer;transition:border-color 160ms var(--ease-out),color 160ms var(--ease-out)}
+.product-actions .ghost:hover{border-color:#c77a0c;color:#8e5704}
+
+.block-title{font-size:15px;font-weight:800;margin:0 0 12px;letter-spacing:.2px}
+.feature-list{margin:0 0 28px;padding:0;list-style:none;display:grid;gap:10px}
+.feature-list li{font-size:14px;color:#3d4a50;padding-left:22px;position:relative;line-height:1.5}
+.feature-list li:before{content:"✓";position:absolute;left:0;color:#c9790b;font-weight:800}
+
+.specs{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.specs th,.specs td{padding:11px 14px;text-align:left;border:1px solid #e3e8e7}
+.specs th{background:#f3f5f3;color:#5a686e;font-weight:600;width:38%}
+.specs td{background:#fff;color:#1a2528;font-weight:600}
+
+.product-note{margin-top:18px;font-size:12px;color:#809096;line-height:1.6}
+
+/* Model specification tables (from 型号表) */
+.model-section{margin-top:48px;padding-top:36px;border-top:1px solid #e3e8e7}
+.model-table-wrap{margin-bottom:32px}
+.model-table-wrap .block-title{margin-bottom:14px;font-size:16px}
+.model-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e3e8e7;background:#fff}
+.model-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+.model-table thead th{background:#1d3038;color:#f0f3f4;font-weight:600;padding:12px 14px;text-align:left;white-space:nowrap;border-bottom:2px solid var(--yellow,#f4bb21);font-size:12px}
+.model-table tbody td{padding:10px 14px;border-bottom:1px solid #edf0ef;color:#1a2528;white-space:nowrap}
+.model-table tbody tr:nth-child(even) td{background:#f7f8f6}
+.model-table tbody tr:hover td{background:#fff8e8}
+.model-table tbody td:first-child{font-weight:700;color:#0c1720}
+
+/* Related */
+.related{margin-top:56px;padding-top:40px;border-top:1px solid #e3e8e7}
+.related h2{font-size:22px;margin:0 0 18px}
+.related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.related-card{display:block;background:#fff;border:1px solid #e3e8e7;padding:0;overflow:hidden;transition:border-color 160ms var(--ease-out),transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);color:inherit}
+.related-card:hover{border-color:#e4b454;transform:translateY(-2px);box-shadow:0 10px 20px rgba(18,33,42,.07)}
+.related-card .rc-art{height:90px;background:#1d3038;position:relative}
+.related-card .rc-art img{width:100%;height:100%;object-fit:cover;display:block}
+.related-card .rc-art .ph{position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 16px,rgba(244,187,33,.14) 16px 18px),#1d3038}
+.related-card .rc-body{padding:14px 16px 16px}
+.related-card .rc-type{font:700 10px "Barlow Condensed";letter-spacing:1.2px;color:#a8680a}
+.related-card h3{margin:4px 0 0;font-size:15px;line-height:1.35}
+
+.product-missing{padding:80px 0;text-align:center}
+.product-missing h1{font-size:28px;margin:0 0 12px}
+.product-missing p{color:#67747a;margin:0 0 24px}
+
+html[lang="en"] .product-title{max-width:18ch;letter-spacing:-.4px}
+
+@media(max-width:900px){
+  .product-layout{grid-template-columns:1fr;gap:28px}
+  .gallery{position:static}
+  .related-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .product-page{padding:32px 0 48px}
+  .product-title{font-size:24px}
+  .related-grid{grid-template-columns:1fr}
+  .gallery-thumbs button{width:56px;height:56px}
+  .model-table{font-size:11.5px;min-width:560px}
+  .model-table thead th,.model-table tbody td{padding:8px 10px}
+}
+
+/* ===== 长正文型设备页：文章正文 + 右侧 Contents 目录 ===== */
+.article-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:52px;align-items:start;margin-top:64px}
+.article{min-width:0}
+.toc{position:sticky;top:96px}
+.toc-inner{border-left:2px solid var(--line);padding:4px 0 4px 20px}
+.toc-title{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+.toc-toggle{display:none}
+.toc-list{list-style:none;margin:0;padding:0}
+.toc-list a{display:block;padding:6px 0 6px 18px;margin-left:-22px;border-left:2px solid transparent;font-size:13.5px;line-height:1.45;color:var(--muted);text-decoration:none;transition:color .2s,border-color .2s}
+.toc-list a:hover{color:var(--ink)}
+.toc-list a.active{color:var(--orange);font-weight:700;border-left-color:var(--yellow)}
+.toc-l3 a{padding-left:34px;font-size:13px;color:var(--muted)}
+
+/* 正文排版 */
+.article .art-h{font-family:"Barlow Condensed","Noto Sans SC",sans-serif;color:var(--ink);line-height:1.2;margin:0;scroll-margin-top:96px}
+.article .art-h2{font-size:30px;letter-spacing:-.3px;margin:48px 0 18px;padding-top:4px}
+.article .art-h2:first-child{margin-top:0}
+.article .art-h3{font-size:21px;margin:34px 0 14px}
+.article .art-richtext{margin:0 0 18px}
+.article .art-richtext p{color:var(--muted);font-size:15px;line-height:1.85;margin:0 0 14px}
+.article .art-richtext h2,.article .art-richtext h3{font-family:"Barlow Condensed","Noto Sans SC",sans-serif;color:var(--ink);margin:24px 0 10px}
+.article .art-richtext h2{font-size:24px}
+.article .art-richtext h3{font-size:19px}
+.article .art-richtext ul,.article .art-richtext ol{margin:0 0 14px;padding-left:22px;color:var(--muted);font-size:15px;line-height:1.8}
+.article .art-richtext li{margin:6px 0}
+.article .art-richtext a{color:var(--orange);text-decoration:none;border-bottom:1px solid rgba(232,125,19,.35)}
+.article .art-richtext blockquote{border-left:3px solid var(--yellow);background:var(--paper);padding:12px 18px;margin:0 0 16px;color:var(--slate);border-radius:0 8px 8px 0;font-size:15px}
+.article .art-richtext code{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px}
+.article .art-richtext pre{background:var(--ink);color:#fff;padding:16px;border-radius:8px;overflow-x:auto;margin:0 0 16px}
+.article .art-richtext pre code{background:none;border:0;color:inherit;padding:0}
+
+/* 正文图片 / 图片组 */
+.art-figure{margin:26px 0}
+.art-figure img{width:100%;border-radius:10px;display:block;background:#fff;border:1px solid var(--line)}
+.art-figure figcaption{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
+.art-gallery{margin:26px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.art-gallery-item img{width:100%;height:100%;object-fit:cover;border-radius:10px;background:#fff;border:1px solid var(--line);display:block}
+.art-gallery figcaption{grid-column:1/-1;font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+
+/* 正文列表 */
+.art-list{margin:10px 0 28px;padding:0}
+.art-list li{position:relative;padding:9px 0 9px 32px;color:var(--slate);font-size:15px;line-height:1.7;border-bottom:1px dashed var(--line)}
+.art-list li:last-child{border-bottom:0}
+.art-list-check{list-style:none}
+.art-list-check li::before{content:"✓";position:absolute;left:4px;top:9px;color:var(--orange);font-weight:700}
+.art-list-bullet{list-style:disc;padding-left:22px}
+.art-list-bullet li{border:0;padding:5px 0 5px 4px}
+.art-list-ordered{list-style:none;counter-reset:artstep}
+.art-list-ordered li::before{counter-increment:artstep;content:counter(artstep);position:absolute;left:0;top:9px;width:22px;height:22px;background:var(--yellow);color:var(--ink);border-radius:50%;font-size:12px;font-weight:700;display:grid;place-items:center}
+
+/* 正文规格表 */
+.spec-table-block{margin:26px 0 34px}
+.spec-table-title{font-size:19px;color:var(--ink);margin:0 0 12px;font-family:"Barlow Condensed","Noto Sans SC",sans-serif}
+.table-note{list-style:none;margin:10px 0 0;padding:0}
+.table-note li{position:relative;padding-left:20px;font-size:13px;color:var(--muted);line-height:1.7;margin:5px 0}
+.table-note li::before{content:"※";position:absolute;left:2px;color:var(--orange)}
+
+@media(max-width:1000px){
+  .article-layout{grid-template-columns:1fr;gap:0;margin-top:44px}
+  .toc{position:static;order:-1;margin-bottom:24px}
+  .toc-inner{border-left:0;padding:0}
+  .toc-title{display:none}
+  .toc-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;background:var(--slate);color:#fff;border:0;border-radius:8px;padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer}
+  .toc-toggle .toc-arrow{transition:transform .2s;display:inline-block}
+  .toc-list{display:none;background:var(--paper);border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;padding:6px 14px;margin-top:-2px}
+  .toc.open .toc-list{display:block}
+  .toc.open .toc-arrow{transform:rotate(180deg)}
+  .toc-list a{margin-left:0;border-left:0;padding:11px 6px;border-bottom:1px dashed var(--line)}
+  .toc-list li:last-child a{border-bottom:0}
+  .toc-l3 a{padding-left:20px}
+}
+@media(max-width:560px){
+  .article .art-h2{font-size:24px}
+  .article .art-h3{font-size:18px}
+  .article .art-richtext p,.article .art-list li,.article .art-richtext ul,.article .art-richtext ol{font-size:14px}
+  .art-gallery{grid-template-columns:1fr 1fr;gap:10px}
+}

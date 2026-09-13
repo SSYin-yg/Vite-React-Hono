@@ -16,6 +16,9 @@ const TEMPLATE = `[
     "features_en": ["Feature one", "Feature two"],
     "specs": [{"k_zh": "功率", "k_en": "Power", "v": "100kW"}],
     "model_tables": [],
+    "intro": [
+      {"title_zh": "工作原理", "title_en": "Working Principle", "body_zh": "中文介绍正文…", "body_en": "English body copy…"}
+    ],
     "published": true
   }
 ]`;

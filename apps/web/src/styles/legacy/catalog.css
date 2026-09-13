@@ -1,0 +1,71 @@
+
+.catalog-body{padding:54px 0 82px}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:25px;margin-bottom:24px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter{border:1px solid var(--line);background:#fff;padding:8px 13px;cursor:pointer;font-size:13px;color:#536068;transition:border-color 160ms var(--ease-out),color 160ms var(--ease-out),background 160ms var(--ease-out),transform 160ms var(--ease-out)}
+.filter.active,.filter:hover{border-color:#d69313;color:#8e5704;background:#fff5d7}.filter:active{transform:scale(.97)}
+.search{background:#fff;border:1px solid var(--line);padding:10px 12px;width:250px;outline:none;font-size:13px;transition:border-color 160ms var(--ease-out)}
+.search:focus{border-color:#c77a0c}
+.result-line{font-size:13px;color:#67747a;margin:0 0 17px}.result-line strong{color:#b46e08}
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.card{background:#fff;border:1px solid #e3e8e7;min-height:225px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 200ms var(--ease-out),transform 200ms var(--ease-out),box-shadow 200ms var(--ease-out)}
+.card:hover{border-color:#e4b454;transform:translateY(-3px);box-shadow:0 12px 24px rgba(18,33,42,.08)}
+.card:active{transform:translateY(-1px) scale(.995)}
+.card-link{display:block;color:inherit;text-decoration:none;flex:1}
+.card-art{height:82px;background:#1d3038;position:relative;overflow:hidden}
+.card-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.card-art:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(244,187,33,.16) 22px 24px);z-index:0}
+.card-art:after{content:attr(data-index);position:absolute;right:18px;bottom:-11px;color:rgba(255,255,255,.15);font:700 72px "Barlow Condensed";line-height:1;z-index:0}
+.card:nth-child(5n+2) .card-art{background:#263941}.card:nth-child(5n+3) .card-art{background:#344149}
+.card:nth-child(5n+4) .card-art{background:#4a3d26}.card:nth-child(5n) .card-art{background:#243237}
+.card-content{padding:18px 19px 0}
+.type{font:700 11px "Barlow Condensed";letter-spacing:1.4px;color:#a8680a}
+.card h2{margin:6px 0 6px;font-size:18px;line-height:1.36;letter-spacing:-.3px}
+.card-foot{border-top:1px solid #edf0ef;margin-top:16px;padding:11px 19px;display:flex;justify-content:space-between;align-items:center}
+.card-foot span{font:600 12px "Barlow Condensed";letter-spacing:1.1px;color:#778389}
+
+.quote{
+  appearance:none;
+  border:0;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 14px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:#1a2528;
+  background:var(--yellow);
+  border-radius:2px;
+  box-shadow:0 1px 0 rgba(0,0,0,.06);
+  transition:background 160ms var(--ease-out),transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);
+}
+.quote::after{
+  content:'→';
+  font-size:14px;
+  font-weight:700;
+  line-height:1;
+  transition:transform 160ms var(--ease-out);
+}
+.quote:hover{
+  background:#ffc92f;
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(244,187,33,.35);
+}
+.quote:hover::after{
+  transform:translateX(3px);
+}
+.quote:active{
+  transform:scale(.97);
+  box-shadow:none;
+}
+.card:hover .quote{
+  background:#ffc92f;
+}
+
+.empty{padding:60px 0;text-align:center;grid-column:1/-1;color:#708087;background:#fff;border:1px dashed #ccd5d5}
+.cta{padding:44px 0}
+html[lang="en"] .filter{padding:8px 12px;font-size:12.5px}
+@media(max-width:820px){.product-grid{grid-template-columns:repeat(2,1fr)}.tools{align-items:flex-start;flex-direction:column}.search{width:100%}.catalog-hero h1{font-size:35px}}
+@media(max-width:560px){.catalog-body{padding:40px 0 60px}.product-grid{grid-template-columns:1fr}.filters{gap:6px}.filter{padding:7px 10px}}

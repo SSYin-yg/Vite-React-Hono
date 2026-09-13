@@ -1,3 +1,19 @@
+/** 主要参数：一行一个（key 中英文 + 值） */
+export type SpecItem = { k_zh: string; k_en: string; v: string };
+
+/** 型号表：标题中英文 + 列定义（中英文）+ 数据行 */
+export type ModelTable = {
+  title_zh: string; title_en: string;
+  columns: { zh: string; en: string }[];
+  rows: string[][];
+};
+
+/** 产品介绍段落块：小标题（渲染为 h3 锚点）+ 正文（纯文本，空行分段） */
+export type IntroBlock = {
+  title_zh: string; title_en: string;
+  body_zh: string; body_en: string;
+};
+
 export type Equipment = {
   id: string;
   name: { zh: string; en: string };
@@ -5,12 +21,9 @@ export type Equipment = {
   images: string[];
   desc: { zh: string; en: string };
   features: { zh: string[]; en: string[] };
-  specs: { k_zh: string; k_en: string; v: string }[];
-  modelTables: {
-    title_zh: string; title_en: string;
-    columns: { zh: string; en: string }[];
-    rows: string[][];
-  }[];
+  specs: SpecItem[];
+  modelTables: ModelTable[];
+  intro: IntroBlock[];
   seo: {
     title: { zh: string; en: string };
     desc: { zh: string; en: string };
@@ -182,6 +195,7 @@ export type AdminEquipmentDetail = {
   features_en: string;  // JSON 字符串
   specs: string;        // JSON 字符串
   model_tables: string; // JSON 字符串
+  intro: string;        // JSON 字符串（产品介绍段落块）
   seo_title_cn: string;
   seo_title_en: string;
   seo_desc_cn: string;
@@ -208,8 +222,9 @@ export type EquipmentInput = {
   desc_en: string;
   features_zh: string[];
   features_en: string[];
-  specs: { k_zh: string; k_en: string; v: string }[];
-  model_tables: unknown[];
+  specs: SpecItem[];
+  model_tables: ModelTable[];
+  intro: IntroBlock[];
   published: boolean;
   seo_title_zh: string;
   seo_title_en: string;

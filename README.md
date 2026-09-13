@@ -36,7 +36,7 @@ Vite-React-Hono-main/
 │   │   │   ├── images.ts          R2 图片上传与读取
 │   │   │   └── seo.ts             sitemap.xml、robots.txt
 │   │   └── legacy-slugs.json      旧站设备 slug → 新 slug 映射（19 条）
-│   ├── migrations/                0001_init / 0002_inquiry_replied / 0003_equipment_seo / 0004_equipment_indexes
+│   ├── migrations/                0001_init / 0002_inquiry_replied / 0003_equipment_seo / 0004_equipment_indexes / 0005_equipment_intro
 │   ├── scripts/seed.mjs           从旧仓库资产生成种子 SQL（设备图路径自动 remap 为 R2）
 │   ├── scripts/migrate-images-r2.mjs  一次性迁移：旧静态图上传 R2 + 生成 D1 UPDATE SQL
 │   ├── seed/seed.sql              生成的种子数据（31 台设备）
@@ -53,20 +53,23 @@ Vite-React-Hono-main/
 │   │   ├── analytics.ts           Google Ads 注入、页面浏览与转化上报
 │   │   ├── seo.ts                 运行时写 title / meta description / keywords
 │   │   ├── site.tsx               全局 Context（语言、站点设置、询盘弹窗）
-│   │   └── i18n-dict.json         前台文案字典（中英，各 211 键）
-│   └── vite.config.ts             dev 代理 /api → 8787；build 拷贝 assets/images
+│   │   ├── i18n-dict.json         前台文案字典（中英，各 211 键）
+│   │   └── styles/legacy/         旧站 6 个 CSS（common/home/catalog/pages/faq/product），已内联进仓库
+│   └── vite.config.ts             dev 代理 /api → 8787；build 拷贝 legacy 图片（源缺失时跳过）
 ├── scripts/
 │   ├── ensure-dist.mjs            dev 前保证 dist 存在（wrangler assets 目录要求）
-│   └── check-admin-env.mjs        后台登录自检（解析 .dev.vars → 探活 → 实测登录）
+│   ├── check-admin-env.mjs        后台登录自检（解析 .dev.vars → 探活 → 实测登录）
+│   ├── smoke-prerender.mts        预渲染冒烟（mock D1/ASSETS，校验注入 HTML / 锚点 / 转义 / 回退）
+│   └── smoke-admin-e2e.mjs        全链路回归：后台 API → D1 → 公开 API → 预渲染页（需 dev 在跑）
 └── package.json                   npm workspaces 根，聚合脚本
 
-# CI 不在本目录：见仓库根 B2B/.github/workflows/deploy.yml
+# CI：本仓库根 .github/workflows/deploy.yml（push main → 构建 + 迁移 + 部署）
 ```
 
 ## 快速开始
 
 ```bash
-cd Vite-React-Hono-main
+cd cloudflare
 npm install
 npm run db:migrate:local     # 首次：建本地 D1 表
 npm run db:seed:local        # 首次：灌入 31 台设备种子
@@ -84,7 +87,7 @@ npm run dev
 | 位置 | 命令 | 作用 |
 |---|---|---|
 | 根 | `npm run dev` | 同时起 API(:8787) + Web(:5173) |
-| 根 | `npm run build` | 构建前端（含 `tsc --noEmit` 类型检查 + 图片拷贝） |
+| 根 | `npm run build` | 构建前端（含 `tsc --noEmit` 类型检查 + legacy 图片拷贝，CI 无源时自动跳过） |
 | 根 | `npm run preview` | 构建 + wrangler dev 单端口模拟线上 |
 | 根 | `npm run deploy` | 构建 + `wrangler deploy` |
 | 根 | `npm run admin:check` | **后台登录自检**（也可 `npm run admin:check -- 密码` 指定） |
@@ -94,18 +97,37 @@ npm run dev
 | api | `npm run typecheck` | `tsc --noEmit` |
 | web | `npm run typecheck` | `tsc --noEmit` |
 
+### 回归测试
+
+```bash
+# 1) 预渲染：不需要起服务，mock D1/ASSETS 直接校验注入的 HTML
+node --experimental-strip-types scripts/smoke-prerender.mts
+
+# 2) 全链路：先起服务，再跑（会创建并删除一个临时设备 smoke-intro-check）
+npm run dev
+node scripts/smoke-admin-e2e.mjs
+```
+
 ## 数据模型（D1）
 
 | 表 | 说明 |
 |---|---|
-| `equipment` | 设备。主键是 slug（`id`），含中英名称/描述/特性、JSON 化的 `specs` / `model_tables` / `images`，`published` 与 `sort` 控制上线与排序，`seo_*` 五列（0003 迁移新增） |
+| `equipment` | 设备。主键是 slug（`id`），含中英名称/描述/特性、JSON 化的 `specs` / `model_tables` / `images` / `intro`，`published` 与 `sort` 控制上线与排序，`seo_*` 五列（0003 迁移新增），`intro` 产品介绍段落块（0005 迁移新增） |
 | `inquiries` | 询盘。`mail_status` 记录发信结果（pending/sent/failed/skipped），`replied` 标记已回复（0002 迁移新增） |
 | `mail_logs` | 邮件发送日志 |
 | `site_settings` | 站点键值配置（品牌名、联系方式、Google Ads 等） |
 | `website_images` | 页面公共图片（Banner / Logo） |
 
-迁移：`0001_init.sql` → `0002_inquiry_replied.sql` → `0003_equipment_seo.sql` → `0004_equipment_indexes.sql`。
+迁移：`0001_init.sql` → `0002_inquiry_replied.sql` → `0003_equipment_seo.sql` → `0004_equipment_indexes.sql` → `0005_equipment_intro.sql`。
 线上用 `wrangler d1 migrations apply minelink-db --remote`，本地用 `--local`。
+
+设备结构化字段（均由后台**可视化编辑器**维护，运维无需写 JSON / HTML）：
+
+| 列 | JSON 结构 | 前台渲染 |
+|---|---|---|
+| `specs` | `[{k_zh,k_en,v}]` | 「主要参数」两列表格 |
+| `model_tables` | `[{title_zh,title_en,columns:[{zh,en}],rows:[[...]]}]` | 每张表一个 `<h2>` section，列头支持中英 |
+| `intro` | `[{title_zh,title_en,body_zh,body_en}]` | 「产品介绍」：每块 → `<h3>`（锚点 `intro-N`）+ 段落（空行分段） |
 
 列表查询复合索引（0004）：`idx_equipment_published_sort (published, sort)` 服务未筛选列表（`WHERE published=1 ORDER BY sort`，首页全量 / 目录分页），`idx_equipment_published_category_sort (published, category, sort)` 服务分类筛选列表与分类计数。经 `EXPLAIN QUERY PLAN` 验证两类查询均命中索引且无需额外排序。
 
@@ -116,7 +138,7 @@ npm run dev
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/equipments` | 设备列表（**精简投影**：仅 `id` / `name` / `category` / `images`，不含 `specs` / `model_tables` / `desc` / `seo` 大字段）。支持 `?category=&q=&page=&pageSize=`；**带分页参数时**返回 `{items,total,page,pageSize,totalPages}`，不带则返回全量 |
-| GET | `/api/equipments/:slug` | 设备详情（嵌套 `name{zh,en}` / `desc` / `features` / `specs` / `modelTables` / `seo`） |
+| GET | `/api/equipments/:slug` | 设备详情（嵌套 `name{zh,en}` / `desc` / `features` / `specs` / `modelTables` / `intro` / `seo`） |
 | GET | `/api/categories` | 分类及计数（仅 published） |
 | POST | `/api/inquiries` | 提交询盘（落库 + 写 mail_logs + 可选发信） |
 | GET | `/api/site/settings` | 站点设置（驱动页头页脚与客服组件） |
@@ -167,7 +189,10 @@ npm run dev
 
 - **总览**：设备总数/已发布、上线率、询盘总数/未回复、分类分布、最近询盘、快捷入口
 - **设备管理**：搜索（slug/中英名）、分类与发布状态筛选、行内发布开关、行内排序、查看前台、编辑、删除、JSON 批量导入
-- **设备编辑**：分四个分区（基本信息 / 内容 / 参数与型号表 / SEO），保存后可「保存并查看前台」
+- **设备编辑**：五个分区（基本信息 / 内容 / **产品介绍** / 参数与型号表 / SEO），保存后可「保存并查看前台」
+  - **产品介绍**：段落块编辑器（小标题 + 正文，可增删/排序）→ 前台渲染为 `<h3>` 锚点，自动进入详情页「本页目录」
+  - **参数与型号表**：主要参数为行式编辑器（参数名中英 + 值）；型号表为表格式编辑器（列定义中英 + 数据行，列/行均可增删）
+  - 两者都保留「高级：直接编辑 JSON」折叠区（点「应用 JSON」才校验回写），供技术人员做批量调整；**普通运维全程不接触 JSON**
 - **询盘管理**：搜索、状态筛选（未回复/已回复/邮件已发/失败）、分页、展开详情、标记已回复
 - **站点设置**：分三组 —— 站点与联系 / Google Ads / 其它；已知的 Google Ads 键可一键补齐
 
@@ -178,6 +203,7 @@ npm run dev
 - **页面**：首页（轮播/精选/指标）、设备目录、设备详情、行业方案、服务支持、关于我们、常见问题
 - **设备目录**：服务端分页（每页 9 条）、分类筛选、防抖搜索、页码同步到 `?page=`
 - **设备 SEO**：后台填写的中英 `seo_title` / `seo_desc` / `seo_keywords`，由 `src/seo.ts` 运行时写入 `document.title` 与 meta 标签（留空回退设备名）
+- **详情页产品介绍 + h 标签导航**：后台维护的「产品介绍」段落块渲染为 `<h3>` 锚点；页面按实际渲染顺序自动生成「本页目录」（h2 一级 / h3 二级），点击平滑跳转对应段落
 - **详情页预渲染**：`/equipment/:slug` 由 Worker 注入 SEO 头与可索引正文后返回，爬虫不执行 JS 也能抓到内容（详见下方章节）
 - **站点设置生效**：`SiteProvider` 拉取 `/api/site/settings`，页头品牌名、页脚联系方式与描述均由其驱动（有硬编码回退）
 - **客服悬浮按钮**（自原版 `assets/contact.js` 迁移）：PC 右下角竖排 WhatsApp / Telegram / Email 圆按钮 + hover 提示；移动端浮动主按钮 + 底部抽屉；按访客本地时间自动日夜配色。联系方式后台可配（`contact_whatsapp` / `contact_telegram` / `contact_email`），三个都为空时组件不渲染
@@ -196,8 +222,8 @@ npm run dev
 **注入的头部**：`<title>`、description、keywords、canonical、`hreflang` 双向、`og:*` / `twitter:*`、
 JSON-LD（Product + BreadcrumbList）。模板自带的 description/keywords 会先移除，避免重复。
 
-**注入的正文**：图集、设备名、简介、特性列表、参数表、型号表 —— 复用前台 CSS 类（`.detail` / `.spec-table` 等），
-React 挂载后接管，视觉一致。
+**注入的正文**：h 标签导航（本页目录）、产品介绍（`<h3>` 锚点 + 段落）、图集、设备名、简介、特性列表、参数表、型号表 —— 复用前台 CSS 类（`.detail` / `.detail-toc` / `.intro-block` / `.spec-table` 等），
+React 挂载后接管，视觉一致。锚点 id 规则（`intro` / `intro-N` / `specs` / `models-N` / `inquiry`）在 SSR 与 CSR 两侧保持一致。
 
 **数据复用**：同时以 `<script type="application/json" id="ssr-equipment">` 注入设备数据，
 前端 `EquipmentDetail` 直接读取（`readSsrEquipment`），省掉首屏那次 API 请求，也消除静态内容被替换的闪烁。
@@ -223,6 +249,8 @@ React 挂载后接管，视觉一致。
 读取路由用通配 `GET /api/images/*`（非 `:key`），以兼容带斜杠的嵌套 key；命中后 `Cache-Control: public, max-age=86400`。上传走 `POST /api/admin/images`（鉴权，限 10MB，写入 `website_images` 并登记）。
 
 > 旧站的 `B2B/assets/images/equipment/*` 是**迁移源**而非线上源；`vite.config.ts` 的 `legacy-images` 插件仍会在构建时把该目录拷入 `dist/assets/images`，属遗留兜底，**线上图片以 R2 为准**。
+> 该目录位于**本仓库之外**，CI 构建机只 clone 本仓库、拿不到它 —— 插件检测不到源目录时会跳过拷贝，不影响云端构建。因此线上必须确保 R2 里已有对象，否则设备图 404。
+> 同理，旧站 6 个 CSS 原先也 import 自 `../../../../assets/`，已内联到 `apps/web/src/styles/legacy/`，保证仓库自包含、可云端构建。
 
 ### 迁移脚本（一次性）
 
@@ -265,18 +293,31 @@ ADMIN_TOKEN=admin123   # 后台登录密码，必填
 npx wrangler login
 npx wrangler d1 create minelink-db          # 把返回的 database_id 填进 wrangler.jsonc
 npx wrangler r2 bucket create minelink-images   # 声明了 IMAGES 绑定，桶必须存在
-npx wrangler d1 migrations apply minelink-db --remote   # 0001 + 0002 + 0003 + 0004
+npx wrangler d1 migrations apply minelink-db --remote   # 0001 + 0002 + 0003 + 0004 + 0005
 npx wrangler secret put ADMIN_TOKEN
 npx wrangler secret put RESEND_API_KEY
 # 改 wrangler.jsonc：SITE_URL / MAIL_FROM / MAIL_TO
 npm run deploy
 ```
 
-### GitHub Actions
+### CI 自动部署（已配置）
 
-仓库根 `.github/workflows/deploy.yml`：push `main`（且 `Vite-React-Hono-main/**` 有变更）自动执行
-装依赖 → 构建 web → 应用 D1 迁移 → `wrangler deploy`。
-需要在仓库 Secrets 配 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
+`.github/workflows/deploy.yml`（仓库根）：push `main` 或手动触发，依次执行
+
+`npm ci` → `npm run typecheck` → `npm run build` → D1 迁移（`--remote`）→ `wrangler deploy`
+
+需在 **Settings → Secrets and variables → Actions** 配置两个 secret：
+
+| Secret | 权限 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Edit Cloudflare Workers + D1 Edit + Workers R2 Storage Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 账号 ID（Dashboard 右侧栏） |
+
+未配置这两个 secret 时，workflow 只跑类型检查与构建并给出 warning，**不会失败**（避免推送即报红）。
+
+> 也可改用 Cloudflare 原生 Workers Builds（Dashboard → 该 Worker → Settings → Builds 连接仓库）：
+> 构建在 Cloudflare 侧进行，无需在 GitHub 存 token。构建命令 `npm ci && npm run build`，
+> 部署命令 `npm run deploy --workspace apps/api`。两种方式**只能启用一个**，否则每次 push 会重复部署。
 
 ## 排错
 

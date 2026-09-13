@@ -55,6 +55,14 @@ const baseRow = {
   model_tables: JSON.stringify([
     { title_zh: '型号表', title_en: 'Models', columns: [{ zh: '型号', en: 'Model' }], rows: [['JC-100']] },
   ]),
+  intro: JSON.stringify([
+    {
+      title_zh: '工作原理',
+      title_en: 'Working Principle',
+      body_zh: '第一段。\n\n第二段。',
+      body_en: 'Para one.\n\nPara two.',
+    },
+  ]),
   seo_title_cn: '', seo_title_en: '', seo_desc_cn: '', seo_desc_en: '', seo_keywords: '破碎机, crusher',
   published: 1,
 };
@@ -85,6 +93,19 @@ async function main() {
   has(hZh, '<img src="https://minelink.example.com/assets/images/equipment/a.webp" alt="颚式破碎机"', '首图绝对地址+alt 正确');
   ok(resZh.headers['X-Prerender'] === 'equipment', 'X-Prerender 响应头设置');
 
+  console.log('\n[1b] 产品介绍 + h 标签导航');
+  has(hZh, 'id="intro"', '产品介绍 section 带锚点 id');
+  has(hZh, '<div class="intro-block" id="intro-1"><h3>工作原理</h3>', '段落块渲染为 h3 锚点');
+  has(hZh, '<p>第一段。</p><p>第二段。</p>', '正文按空行分段（与前端规则一致）');
+  has(hZh, 'id="specs"', '主要参数 section 带锚点 id');
+  has(hZh, 'id="models-1"', '型号表 section 带锚点 id');
+  has(hZh, '<nav class="detail-toc"', 'h 标签导航已注入');
+  has(hZh, '<a href="#intro">产品介绍</a>', '目录含一级锚点（产品介绍）');
+  has(hZh, '<li class="is-sub"><a href="#intro-1">工作原理</a></li>', '目录含 h3 二级锚点');
+  has(hZh, '<a href="#specs">主要参数</a>', '目录含主要参数锚点');
+  has(hZh, '<a href="#models-1">型号表</a>', '目录含型号表锚点');
+  has(hZh, '"intro":[{"title_zh":"工作原理"', 'SSR 数据注入 intro（首屏免请求）');
+
   // 2) 英文页 lang 属性
   console.log('\n[2] 英文预渲染');
   const resEn = (await prerenderEquipment(makeCtx({ row: baseRow }), 'jaw-crusher', 'en')) as any;
@@ -92,6 +113,10 @@ async function main() {
   has(hEn, '<html lang="en">', '<html lang="en"> 正确设置（修复点）');
   has(hEn, '<title>Jaw Crusher | Minelink Equipment</title>', '英文 title 注入');
   has(hEn, 'og:locale" content="en_US"', 'og:locale 为 en_US');
+  has(hEn, '<h2>Product Introduction</h2>', '英文产品介绍标题');
+  has(hEn, '<h3>Working Principle</h3>', '英文 h3 锚点');
+  has(hEn, '<p>Para one.</p><p>Para two.</p>', '英文正文分段');
+  has(hEn, 'aria-label="On this page"', '英文目录标题');
 
   // 3) 未发布/不存在 → 回退 SPA（返回 null）
   console.log('\n[3] 不存在的设备 → 返回 null（交回 SPA）');
@@ -100,12 +125,21 @@ async function main() {
 
   // 4) XSS 转义
   console.log('\n[4] XSS / 注入防护');
-  const evilRow = { ...baseRow, name_cn: '<script>alert(1)</script>', desc_cn: '" onmouseover="x()' };
+  const evilRow = {
+    ...baseRow,
+    name_cn: '<script>alert(1)</script>',
+    desc_cn: '" onmouseover="x()',
+    intro: JSON.stringify([
+      { title_zh: '<img src=x onerror=1>', title_en: 'x', body_zh: '<script>evil()</script>', body_en: '' },
+    ]),
+  };
   const resEvil = (await prerenderEquipment(makeCtx({ row: evilRow }), 'jaw-crusher', 'zh')) as any;
   const hEvil = resEvil.body as string;
   notHas(hEvil, '<script>alert(1)</script>', '设备名中的 <script> 被转义（未原样注入）');
   has(hEvil, '&lt;script&gt;alert(1)&lt;/script&gt;', '设备名转义为实体');
   notHas(hEvil, 'onmouseover="x()"', '属性值中的事件处理器被转义');
+  notHas(hEvil, '<img src=x onerror=1>', '产品介绍小标题被转义');
+  has(hEvil, '&lt;script&gt;evil()&lt;/script&gt;', '产品介绍正文被转义');
 
   // 5) 非法 slug → 返回 null
   console.log('\n[5] 非法 slug');

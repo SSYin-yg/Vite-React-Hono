@@ -45,6 +45,7 @@ type EquipmentRow = {
   features_en: string;
   specs: string;
   model_tables: string;
+  intro: string;
   seo_title_cn: string;
   seo_title_en: string;
   seo_desc_cn: string;
@@ -58,6 +59,14 @@ type ModelTable = {
   title_en: string;
   columns: { zh: string; en: string }[];
   rows: string[][];
+};
+
+/** 产品介绍段落块：小标题（渲染为 h3 锚点）+ 纯文本正文 */
+type IntroBlock = {
+  title_zh: string;
+  title_en: string;
+  body_zh: string;
+  body_en: string;
 };
 
 /* ---------------- 转义（防 XSS / 破坏 HTML 结构） ---------------- */
@@ -143,10 +152,14 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
   const images = safeJson<string[]>(row.images, []);
   const specs = safeJson<{ k_zh: string; k_en: string; v: string }[]>(row.specs, []);
   const tables = safeJson<ModelTable[]>(row.model_tables, []);
+  const intro = safeJson<IntroBlock[]>(row.intro, []);
 
   const homeLabel = lang === 'zh' ? '首页' : 'Home';
   const catalogLabel = lang === 'zh' ? '设备中心' : 'Catalog';
   const specLabel = lang === 'zh' ? '主要参数' : 'Specifications';
+  const introLabel = lang === 'zh' ? '产品介绍' : 'Product Introduction';
+  const modelsLabel = lang === 'zh' ? '型号表' : 'Models';
+  const tocLabel = lang === 'zh' ? '本页目录' : 'On this page';
   const otherPath = lang === 'zh' ? `/en/equipment/${row.id}` : `/equipment/${row.id}`;
   const prefix = lang === 'en' ? '/en' : '';
 
@@ -167,9 +180,71 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
         .join('\n')}\n              </ul>`
     : '';
 
+  /* ---------------- 产品介绍（每块 → h3 锚点 + 段落） ----------------
+     分段规则（按空行切段）必须与前端 EquipmentDetail.tsx 完全一致，
+     锚点 id 规则（intro-N）同理，否则 React 接管后目录链接会失效。 */
+  const introBlocks = intro
+    .map((b, i) => {
+      const heading = pick(b.title_zh, b.title_en, lang);
+      const body = pick(b.body_zh, b.body_en, lang);
+      if (!heading && !body) return '';
+      const paras = body
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => `<p>${esc(p)}</p>`)
+        .join('');
+      return `<div class="intro-block" id="intro-${i + 1}">${
+        heading ? `<h3>${esc(heading)}</h3>` : ''
+      }${paras}</div>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  const introSection = introBlocks
+    ? `
+        <section class="detail-section" id="intro">
+          <h2>${esc(introLabel)}</h2>
+          ${introBlocks}
+        </section>`
+    : '';
+
+  /* ---------------- h 标签导航（只收录本 HTML 里真实存在的 section） ---------------- */
+  const tocItems: { id: string; label: string; sub: boolean }[] = [];
+  if (introBlocks) {
+    tocItems.push({ id: 'intro', label: introLabel, sub: false });
+    intro.forEach((b, i) => {
+      const h = pick(b.title_zh, b.title_en, lang);
+      if (h) tocItems.push({ id: `intro-${i + 1}`, label: h, sub: true });
+    });
+  }
+  if (specs.length) tocItems.push({ id: 'specs', label: specLabel, sub: false });
+  tables.forEach((tb, i) => {
+    const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${i + 1}`;
+    tocItems.push({ id: `models-${i + 1}`, label: title, sub: false });
+  });
+
+  const tocHtml =
+    tocItems.length >= 2
+      ? `
+        <nav class="detail-toc" aria-label="${attr(tocLabel)}">
+          <span class="detail-toc-title">${esc(tocLabel)}</span>
+          <ul>
+${tocItems
+  .map(
+    (it) =>
+      `            <li${it.sub ? ' class="is-sub"' : ''}><a href="#${attr(
+        it.id
+      )}">${esc(it.label)}</a></li>`
+  )
+  .join('\n')}
+          </ul>
+        </nav>`
+      : '';
+
   const specSection = specs.length
     ? `
-        <section class="detail-section">
+        <section class="detail-section" id="specs">
           <h2>${esc(specLabel)}</h2>
           <table class="spec-table">
             <tbody>
@@ -187,13 +262,12 @@ ${specs
     : '';
 
   const tableSections = tables
-    .map((tb) => {
-      const title = pick(tb.title_zh, tb.title_en, lang);
+    .map((tb, ti) => {
+      const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${ti + 1}`;
       const cols = Array.isArray(tb.columns) ? tb.columns : [];
       const rows = Array.isArray(tb.rows) ? tb.rows : [];
-      if (!cols.length && !rows.length) return '';
       return `
-        <section class="detail-section">
+        <section class="detail-section" id="models-${ti + 1}">
           <h2>${esc(title)}</h2>
           <div class="table-scroll">
             <table class="spec-table">
@@ -237,7 +311,7 @@ ${rows
               </p>
               <h1>${esc(name)}</h1>${desc ? `\n              <p class="desc">${esc(desc)}</p>` : ''}${featureList}
             </div>
-          </div>${specSection}${tableSections}
+          </div>${tocHtml}${introSection}${specSection}${tableSections}
         </div>
       </main>`;
 }
@@ -428,6 +502,7 @@ export async function prerenderEquipment(
     },
     specs: safeJson<unknown[]>(row.specs, []),
     modelTables: safeJson<unknown[]>(row.model_tables, []),
+    intro: safeJson<unknown[]>(row.intro, []),
     seo: {
       title: { zh: row.seo_title_cn ?? '', en: row.seo_title_en ?? '' },
       desc: { zh: row.seo_desc_cn ?? '', en: row.seo_desc_en ?? '' },

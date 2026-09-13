@@ -9,7 +9,11 @@ import {
   authFetch,
   type AdminEquipmentDetail,
   type EquipmentInput,
+  type IntroBlock,
+  type ModelTable,
+  type SpecItem,
 } from '../api';
+import { IntroEditor, ModelTablesEditor, SpecsEditor } from './EquipmentEditors';
 
 const emptyForm = (): EquipmentInput => ({
   id: '',
@@ -23,6 +27,7 @@ const emptyForm = (): EquipmentInput => ({
   features_en: [],
   specs: [],
   model_tables: [],
+  intro: [],
   published: true,
   seo_title_zh: '',
   seo_title_en: '',
@@ -48,6 +53,57 @@ const parseObj = <T,>(s: string, fallback: T): T => {
 const toLines = (arr: string[]) => arr.join('\n');
 const fromLines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 
+/**
+ * 高级 JSON 兜底编辑器：草稿本地保存，点「应用」才校验并回写。
+ * （不做实时 parse —— 输入过程中 JSON 必然短暂非法，实时覆盖会吃掉用户输入）
+ */
+function JsonField({
+  label,
+  value,
+  onApply,
+}: {
+  label: string;
+  value: unknown;
+  onApply: (v: unknown) => void;
+}) {
+  const { t } = useAdmin();
+  const [draft, setDraft] = useState(() => JSON.stringify(value ?? [], null, 2));
+  const [err, setErr] = useState<string | null>(null);
+
+  // 外部值变化（切换设备 / 可视化编辑器改动）时同步草稿
+  useEffect(() => {
+    setDraft(JSON.stringify(value ?? [], null, 2));
+    setErr(null);
+  }, [value]);
+
+  const apply = () => {
+    try {
+      onApply(JSON.parse(draft));
+      setErr(null);
+    } catch (e) {
+      setErr(String(e));
+    }
+  };
+
+  return (
+    <label>
+      {label}
+      <textarea
+        value={draft}
+        spellCheck={false}
+        onChange={(e) => setDraft(e.target.value)}
+        style={err ? { borderColor: 'var(--adm-danger)' } : undefined}
+      />
+      <span className="adm-ed-json-actions">
+        <button type="button" className="admin-btn admin-btn-sm" onClick={apply}>
+          {t('equipment.ed.apply_json')}
+        </button>
+        {err && <small className="adm-ed-json-err">{err}</small>}
+      </span>
+    </label>
+  );
+}
+
 export default function EquipmentForm() {
   const { t, base } = useAdmin();
   const { id } = useParams();
@@ -71,8 +127,9 @@ export default function EquipmentForm() {
           desc_en: d.desc_en,
           features_zh: parseArr(d.features_cn),
           features_en: parseArr(d.features_en),
-          specs: parseObj(d.specs, []),
-          model_tables: parseObj(d.model_tables, []),
+          specs: parseObj<SpecItem[]>(d.specs, []),
+          model_tables: parseObj<ModelTable[]>(d.model_tables, []),
+          intro: parseObj<IntroBlock[]>(d.intro, []),
           published: !!d.published,
           seo_title_zh: d.seo_title_cn ?? '',
           seo_title_en: d.seo_title_en ?? '',
@@ -209,13 +266,24 @@ export default function EquipmentForm() {
       </fieldset>
 
       <fieldset className="admin-fieldset">
+        <legend>{t('equipment.group_intro')}</legend>
+        <IntroEditor value={form.intro} onChange={(v) => set({ intro: v })} />
+      </fieldset>
+
+      <fieldset className="admin-fieldset">
         <legend>{t('equipment.group_specs')}</legend>
-        <label>{f('specs')} (JSON)
-          <textarea value={JSON.stringify(form.specs, null, 2)} onChange={(e) => { try { set({ specs: JSON.parse(e.target.value) }); } catch { /* 保留上次合法值 */ } }} />
-        </label>
-        <label>{f('model_tables')} (JSON)
-          <textarea value={JSON.stringify(form.model_tables, null, 2)} onChange={(e) => { try { set({ model_tables: JSON.parse(e.target.value) }); } catch { /* 保留上次合法值 */ } }} />
-        </label>
+
+        <SpecsEditor value={form.specs} onChange={(v) => set({ specs: v })} />
+        <hr className="adm-ed-sep" />
+        <ModelTablesEditor value={form.model_tables} onChange={(v) => set({ model_tables: v })} />
+
+        {/* 高级兜底：技术人员可直接编辑 JSON；普通运维无需打开 */}
+        <details className="adm-ed-advanced">
+          <summary>{t('equipment.ed.advanced')}</summary>
+          <JsonField label={f('specs')} value={form.specs} onApply={(v) => set({ specs: v as SpecItem[] })} />
+          <JsonField label={f('model_tables')} value={form.model_tables} onApply={(v) => set({ model_tables: v as ModelTable[] })} />
+          <JsonField label={t('equipment.ed.intro_json')} value={form.intro} onApply={(v) => set({ intro: v as IntroBlock[] })} />
+        </details>
       </fieldset>
 
       <fieldset className="admin-fieldset">

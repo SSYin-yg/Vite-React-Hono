@@ -34,6 +34,9 @@ function legacyImages(): Plugin {
       });
     },
     closeBundle() {
+      // 该目录在仓库之外（D:\B2B\assets\images），CI 构建机只 clone 了本仓库，源必然不存在。
+      // 此插件属遗留兜底（线上图片以 R2 为准），缺失时跳过，不能让构建失败。
+      if (!existsSync(legacyImagesRoot)) return;
       cpSync(legacyImagesRoot, path.resolve(configDir, 'dist/assets/images'), {
         recursive: true,
       });

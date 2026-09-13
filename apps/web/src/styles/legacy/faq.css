@@ -1,0 +1,15 @@
+
+.faq-body{padding:54px 0 82px}
+.faq-list{display:grid;gap:12px;max-width:860px;margin:0 auto}
+.faq-item{border:1px solid var(--line);background:#fff;overflow:hidden;transition:border-color 200ms var(--ease-out),box-shadow 200ms var(--ease-out)}
+.faq-item:hover{border-color:#e4b454}
+.faq-item[open]{border-color:#d69313;box-shadow:0 8px 20px rgba(18,33,42,.06)}
+.faq-item summary{list-style:none;cursor:pointer;padding:18px 22px;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:16px;user-select:none}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:after{content:"+";font:700 22px "Barlow Condensed";color:var(--yellow);flex-shrink:0}
+.faq-item[open] summary:after{content:"−"}
+.faq-item .faq-answer{padding:0 22px 20px;color:#5e6b73;font-size:14px;line-height:1.8}
+.faq-item .faq-answer p{margin:0 0 10px}.faq-item .faq-answer p:last-child{margin-bottom:0}
+.cta{padding:44px 0}
+html[lang="en"] .faq-item summary{font-size:14.5px;line-height:1.45}
+@media(max-width:560px){.faq-body{padding:40px 0 60px}.faq-item summary{padding:16px 18px;font-size:14px}}

@@ -27,6 +27,35 @@
 .spec-table th { background: #f6f8fb; width: 38%; }
 .table-scroll { overflow-x: auto; }
 
+/* h 标签导航（详情页目录）：由页面 h2/h3 生成 */
+.detail-toc {
+  margin-top: 26px; padding: 14px 18px; border: 1px solid #e3e8e7;
+  border-radius: 10px; background: #f8fafb;
+}
+.detail-toc-title {
+  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #849096;
+}
+.detail-toc ul {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px 18px;
+}
+.detail-toc li { margin: 0; }
+.detail-toc li.is-sub::before { content: '↳ '; color: #b9c2c8; }
+.detail-toc a {
+  color: #12314a; text-decoration: none; font-size: 14px;
+  border-bottom: 1px dashed #cfd8dd;
+}
+.detail-toc a:hover { color: #b8860b; border-bottom-color: #e4b454; }
+.detail-section[id] { scroll-margin-top: 24px; }
+
+/* 产品介绍：段落块（h3 锚点 + 正文） */
+.intro-block { margin: 0 0 18px; }
+.intro-block:last-child { margin-bottom: 0; }
+.intro-block h3 { font-size: 17px; margin: 18px 0 8px; color: #12314a; }
+.intro-block:first-child h3 { margin-top: 0; }
+.intro-block p { margin: 0 0 10px; color: #4a555c; line-height: 1.9; white-space: pre-line; }
+.intro-block p:last-child { margin-bottom: 0; }
+
 /* 详情页询盘表单（React 版） */
 .inquiry-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 760px; }
 .inquiry-form .wide { grid-column: 1 / -1; }

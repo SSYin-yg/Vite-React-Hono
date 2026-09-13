@@ -1112,3 +1112,74 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+   设备编辑 · 可视化字段编辑器（主要参数 / 型号表 / 产品介绍）
+   目标：运维不写 JSON，只用「加一行 / 加一列 / 加一段」
+   ============================================================ */
+.adm-ed { display: flex; flex-direction: column; gap: 12px; }
+.adm-ed-hint { margin: 0; color: var(--adm-muted); font-size: 12.5px; line-height: 1.7; }
+.adm-ed-empty {
+  margin: 0; color: var(--adm-muted); font-size: 13px; padding: 10px 12px;
+  border: 1px dashed var(--adm-line); border-radius: 10px; background: var(--adm-surface-2);
+}
+.adm-ed-sep { border: 0; border-top: 1px solid var(--adm-line); margin: 2px 0; width: 100%; }
+.adm-ed > .admin-btn { align-self: flex-start; }
+
+.adm-ed-tools { display: flex; gap: 4px; flex-shrink: 0; }
+.adm-ed-tools .admin-btn { padding: 4px 9px; line-height: 1.1; }
+
+/* --- 主要参数：行式 --- */
+.adm-ed-specs { display: flex; flex-direction: column; gap: 8px; }
+.adm-ed-specs-head,
+.adm-ed-specs-row {
+  display: grid; grid-template-columns: 1.1fr 1.1fr 1.4fr auto; gap: 8px; align-items: center;
+}
+.adm-ed-specs-head { font-size: 12px; color: var(--adm-muted); padding: 0 2px; }
+.adm-ed-specs-row input { min-width: 0; }
+
+/* --- 型号表 / 产品介绍：卡片 --- */
+.adm-ed-card {
+  border: 1px solid var(--adm-line); border-radius: 12px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 12px; background: var(--adm-card);
+}
+.adm-ed-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.adm-ed-card-title { font-size: 13px; font-weight: 700; color: var(--adm-ink-2); }
+.adm-ed-sub { display: flex; flex-direction: column; gap: 8px; }
+.adm-ed-sub-title { font-size: 12px; font-weight: 700; color: var(--adm-muted); letter-spacing: 0.04em; }
+.adm-ed-sub > .admin-btn { align-self: flex-start; }
+
+/* 列定义 */
+.adm-ed-cols { display: flex; flex-direction: column; gap: 8px; }
+.adm-ed-col { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 8px; align-items: center; }
+.adm-ed-col input { min-width: 0; }
+.adm-ed-col-no {
+  width: 24px; height: 24px; border-radius: 7px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  color: var(--adm-primary); background: var(--adm-primary-soft); border: 1px solid var(--adm-primary-line);
+}
+
+/* 表格内输入框（型号表数据行） */
+.adm-ed-table { min-width: 0; }
+.adm-ed-table th, .adm-ed-table td { padding: 6px 8px; }
+.adm-ed-table input { width: 100%; min-width: 88px; padding: 6px 8px; }
+
+/* 产品介绍正文：用正文字体（不继承表单的等宽字体） */
+.adm-ed-prose textarea { font-family: inherit; line-height: 1.7; }
+
+/* 高级 JSON 兜底区 */
+.adm-ed-advanced { border-top: 1px dashed var(--adm-line); padding-top: 10px; width: 100%; }
+.adm-ed-advanced > summary { cursor: pointer; font-size: 12.5px; color: var(--adm-muted); user-select: none; }
+.adm-ed-advanced > summary:hover { color: var(--adm-primary); }
+.adm-ed-advanced[open] { display: flex; flex-direction: column; gap: 12px; }
+.adm-ed-json-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.adm-ed-json-err { color: var(--adm-danger); font-size: 12px; word-break: break-all; }
+
+@media (max-width: 760px) {
+  .adm-ed-specs-head { display: none; }
+  .adm-ed-specs-row { grid-template-columns: 1fr 1fr; }
+  .adm-ed-specs-row > input:nth-child(3) { grid-column: 1 / -1; }
+  .adm-ed-specs-row > .adm-ed-tools { grid-column: 1 / -1; justify-content: flex-end; }
+  .adm-ed-col { grid-template-columns: auto 1fr auto; }
+  .adm-ed-col > input:nth-child(3) { grid-column: 2; }
+}
