@@ -359,3 +359,98 @@ export async function getAdsConfig(): Promise<AdsConfig> {
   if (!res.ok) throw new Error(`API ${res.status}`);
   return (await res.json()) as AdsConfig;
 }
+
+/* ------------------------------------------------------------------ */
+/* 邮件通知：后台可视化配置（API Key 永不返回明文）                       */
+/* ------------------------------------------------------------------ */
+
+export type MailSource = 'db' | 'env' | 'none';
+
+export type MailConfigView = {
+  /** 后台编辑面板用的原始值（api_key 以 has_key / key_tail 体现） */
+  stored: {
+    enabled: string;
+    from: string;
+    to: string;
+    cc: string;
+    reply_to: string;
+    subject_prefix: string;
+    has_key: boolean;
+    key_tail: string;
+  };
+  /** 含环境变量回退的生效值（API 不可编辑，发信时实际用的就是这份） */
+  effective: {
+    enabled: boolean;
+    from: string;
+    to: string;
+    cc: string;
+    reply_to: string;
+    subject_prefix: string;
+    has_key: boolean;
+    key_tail: string;
+    source: { apiKey: MailSource; from: MailSource; to: MailSource };
+  };
+  ready: boolean;
+  missing: string[];
+  env: { key: boolean; from: boolean; to: boolean };
+};
+
+export async function getMailConfig(): Promise<MailConfigView> {
+  const res = await authFetch('/api/admin/mail/config');
+  return (await res.json()) as MailConfigView;
+}
+
+/** 更新邮件配置。空串 = 清空该字段回退到环境变量；缺省字段保持不变。 */
+export async function updateMailConfig(p: {
+  enabled?: '' | '1' | '0' | 'true' | 'false';
+  from?: string;
+  to?: string;
+  cc?: string;
+  reply_to?: string;
+  subject_prefix?: string;
+  api_key?: string;
+}): Promise<MailConfigView> {
+  const res = await authFetch('/api/admin/mail/config', {
+    method: 'PUT',
+    body: JSON.stringify(p),
+  });
+  return (await res.json()) as MailConfigView;
+}
+
+/** 发送一封测试邮件，可指定收件人（留空就用配置里的默认收件人） */
+export async function sendTestMail(to?: string): Promise<{
+  ok: boolean;
+  status: 'sent' | 'failed' | 'skipped';
+  error: string;
+  to: string[];
+  subject: string;
+}> {
+  const res = await authFetch('/api/admin/mail/test', {
+    method: 'POST',
+    body: JSON.stringify({ to }),
+  });
+  return (await res.json()) as {
+    ok: boolean;
+    status: 'sent' | 'failed' | 'skipped';
+    error: string;
+    to: string[];
+    subject: string;
+  };
+}
+
+export type MailLog = {
+  id: number;
+  type: string;
+  to_addr: string;
+  cc: string | null;
+  subject: string;
+  status: string;
+  error: string | null;
+  inquiry_id: number | null;
+  sent_at: string;
+};
+
+export async function listMailLogs(limit = 30): Promise<{ items: MailLog[]; default_prefix: string }> {
+  const res = await authFetch(`/api/admin/mail/logs?limit=${Math.max(1, Math.min(200, limit))}`);
+  return (await res.json()) as { items: MailLog[]; default_prefix: string };
+}

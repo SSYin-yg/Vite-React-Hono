@@ -4,6 +4,7 @@ import equipments from './routes/equipments';
 import inquiries from './routes/inquiries';
 import site from './routes/site';
 import admin from './routes/admin';
+import mail from './routes/mail';
 import { requireAdmin, type AdminEnv } from './auth';
 import seo from './routes/seo';
 import images from './routes/images';
@@ -62,6 +63,7 @@ app.route('/api', equipments);
 app.route('/api', inquiries);
 app.route('/api', site);
 app.route('/api', admin); // /api/admin/login、/api/admin/session
+app.route('/api', mail); // /api/admin/mail/config、/test、/logs
 app.route('/', seo);
 app.route('/', images);
 

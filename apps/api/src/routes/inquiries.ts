@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { resolveMailConfig, sendMail, mailLogStatement } from '../mail';
 
 type Bindings = {
   DB: D1Database;
@@ -10,40 +11,56 @@ type Bindings = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const INQUIRY_PREFIX = '[询盘]'; // 同步落日志用「D1 主题」，具体前缀以后台配置为准（mail.ts 中可改）
+
+/** 询盘通知：复用 mail.ts 的 D1 配置 + Resend 发送，回复地址默认设为访客邮箱 */
 async function sendInquiryMail(env: Bindings, inquiry: {
   id: number; equipment: string; customer_name: string;
   email: string; whatsapp: string; country: string; message: string;
-}): Promise<{ status: 'sent' | 'failed' | 'skipped'; error?: string }> {
-  if (!env.RESEND_API_KEY) return { status: 'skipped', error: 'RESEND_API_KEY 未配置，仅落库' };
+}): Promise<{ status: 'sent' | 'failed' | 'skipped'; error?: string; to: string[]; subject: string }> {
+  const cfg = await resolveMailConfig(env);
+  if (!cfg.enabled) return { status: 'skipped', error: '邮件通知未启用（后台「邮件通知」可开启）', to: [], subject: '' };
+  if (!cfg.ready)
+    return {
+      status: 'skipped',
+      error: `邮件配置不完整，缺少：${cfg.missing.join(' / ')}`,
+      to: [],
+      subject: '',
+    };
 
-  // 固定调用 Resend 官方 HTTPS 端点，收发件人来自 Worker 配置，不接受请求方传入
-  const host = 'api.resend.com';
-  if (!host.includes('.')) return { status: 'failed', error: 'bad mail host' };
+  const baseSubject = `#${inquiry.id} ${inquiry.customer_name} - ${inquiry.equipment || '通用咨询'}`;
+  const subject = `${cfg.subjectPrefix || INQUIRY_PREFIX} ${baseSubject}`.trim();
 
-  const res = await fetch(`https://${host}/emails`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: env.MAIL_FROM,
-      to: [env.MAIL_TO],
-      subject: `[询盘 #${inquiry.id}] ${inquiry.customer_name} - ${inquiry.equipment || '通用咨询'}`,
-      html: `
-        <h3>新询盘 #${inquiry.id}</h3>
-        <ul>
-          <li>姓名：${inquiry.customer_name}</li>
-          <li>邮箱：${inquiry.email || '-'}</li>
-          <li>WhatsApp/电话：${inquiry.whatsapp || '-'}</li>
-          <li>国家/地区：${inquiry.country || '-'}</li>
-          <li>意向设备：${inquiry.equipment || '-'}</li>
-        </ul>
-        <p>${(inquiry.message || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>`,
-    }),
+  const html = `
+    <h3>新询盘 #${inquiry.id}</h3>
+    <ul>
+      <li>姓名：${escHtml(inquiry.customer_name)}</li>
+      <li>邮箱：${escHtml(inquiry.email) || '-'}</li>
+      <li>WhatsApp/电话：${escHtml(inquiry.whatsapp) || '-'}</li>
+      <li>国家/地区：${escHtml(inquiry.country) || '-'}</li>
+      <li>意向设备：${escHtml(inquiry.equipment) || '-'}</li>
+    </ul>
+    <p>${formatMessage(inquiry.message)}</p>
+    <p style="color:#888">由 Minelink 后台邮件通知发出</p>`;
+
+  const r = await sendMail(env, {
+    subject: baseSubject, // 前缀在 mail.ts 内叠加
+    html,
+    replyTo: inquiry.email || undefined,
   });
-  if (!res.ok) return { status: 'failed', error: `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
-  return { status: 'sent' };
+  return { status: r.status, error: r.error, to: r.to, subject: r.subject };
+}
+
+/** HTML 转义，避免任何富文本注入面 */
+function escHtml(s: string): string {
+  return String(s ?? '').replace(/[&<>"']/g, (c) =>
+    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;'
+  );
+}
+
+/** 多行内容中的换行保留为 <br>，再做 HTML 转义 */
+function formatMessage(msg: string): string {
+  return escHtml(msg || '').replace(/\r?\n/g, '<br>');
 }
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -79,13 +96,19 @@ app.post('/inquiries', async (c) => {
   const id = Number(meta.last_row_id);
 
   const mail = await sendInquiryMail(c.env, { ...inquiry, id });
+  // 一次性 batch：更新询盘状态 + 写 mail_logs
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE inquiries SET email_sent = ?, mail_status = ? WHERE id = ?')
       .bind(mail.status === 'sent' ? 1 : 0, mail.status, id),
-    c.env.DB.prepare(
-      'INSERT INTO mail_logs (type, to_addr, subject, status, error, inquiry_id) VALUES (?,?,?,?,?,?)'
-    ).bind('inquiry_notify', c.env.MAIL_TO ?? '',
-           `[询盘 #${id}] ${inquiry.customer_name}`, mail.status, mail.error ?? '', id),
+    mailLogStatement(c.env.DB, {
+      type: 'inquiry_notify',
+      to: mail.to,
+      cc: undefined,
+      subject: mail.subject,
+      status: mail.status,
+      error: mail.error ?? '',
+      inquiryId: id,
+    }),
   ]);
 
   return c.json({ ok: true, id }, 201);
@@ -131,3 +154,5 @@ app.put('/admin/inquiries/:id', async (c) => {
 });
 
 export default app;
+</content>
+</invoke>

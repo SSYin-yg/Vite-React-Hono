@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { readSettings, saveSettings } from '../settings';
 
 type Bindings = {
   DB: D1Database;
@@ -87,13 +88,6 @@ function validateAds(body: Record<string, string>): string | null {
   return null;
 }
 
-async function readSettings(db: D1Database): Promise<Record<string, string>> {
-  const { results } = await db.prepare('SELECT key, value FROM site_settings').all();
-  const out: Record<string, string> = {};
-  for (const r of results ?? []) out[r.key as string] = String(r.value ?? '');
-  return out;
-}
-
 // 公开：站点全局设置
 app.get('/site/settings', async (c) => {
   return c.json(await readSettings(c.env.DB));
@@ -112,12 +106,7 @@ app.put('/admin/site/settings', async (c) => {
   const adsErr = validateAds(body);
   if (adsErr) return c.json({ error: adsErr }, 400);
 
-  const stmts = Object.entries(body).map(([key, value]) =>
-    c.env.DB.prepare(
-      "INSERT INTO site_settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = ?2"
-    ).bind(String(key), String(value))
-  );
-  if (stmts.length) await c.env.DB.batch(stmts);
+  await saveSettings(c.env.DB, body);
   return c.json({ ok: true });
 });
 

@@ -61,3 +61,4 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Host "`n[Error] 推送失败，请检查上方报错信息。" -ForegroundColor Red
 }
+Read-Host "按回车键退出..."
