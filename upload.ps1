@@ -1,5 +1,6 @@
 # upload.ps1 - Git 自动配置身份、远程仓库、提交与推送脚本
-
+# 修复 PowerShell 中文乱码
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # ===== 请在此处填写你的 GitHub 配置信息 =====
 $GithubEmail = "ssyin033@yeah.net"
 $GithubName  = "SSYin-yg"
