@@ -20,6 +20,7 @@
  *
  * 前置：已 `wrangler login`、R2 桶 minelink-images 已建（wrangler r2 bucket create minelink-images）。
  *       桶名取自 wrangler.jsonc 的 r2_buckets[0].bucket_name。
+ *       依赖旧站 assets/ 目录（仓库外），可用 LEGACY_ASSETS_ROOT 指定。
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -27,12 +28,45 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(here, '../../../..'); // D:/B2B
-const apiRoot = path.resolve(here, '..'); // D:/B2B/cloudflare/apps/api
-const webSrc = path.join(repoRoot, 'cloudflare/apps/web/src');
+const apiRoot = path.resolve(here, '..'); // <repo>/apps/api
+const webSrc = path.resolve(apiRoot, '../web/src'); // <repo>/apps/web/src
+
+// 旧站资源（assets/equipment-data.js + assets/images/**）在**仓库之外**的一级目录里，
+// 只作为一次性迁移的输入源。仓库挪位置时用环境变量覆盖：
+//   LEGACY_ASSETS_ROOT=D:/somewhere/node scripts/migrate-images-r2.mjs
+const legacyRoot = process.env.LEGACY_ASSETS_ROOT
+  ? path.resolve(process.env.LEGACY_ASSETS_ROOT)
+  : path.resolve(apiRoot, '../../..');
+const repoRoot = legacyRoot; // 下文沿用的显示基准
+const legacyData = path.join(legacyRoot, 'assets/equipment-data.js');
+if (!existsSync(legacyData)) {
+  console.error(
+    `未找到旧站设备数据源：${legacyData}\n` +
+      '这不是代码问题 —— 设备图迁移需要旧站的 assets/ 目录（含 equipment-data.js 与 images/）。\n' +
+      '若该目录在别处，用 LEGACY_ASSETS_ROOT 指定其父目录后重跑。'
+  );
+  process.exit(1);
+}
 
 const DRY_RUN = process.argv.includes('--dry-run') || process.argv.includes('-n');
-const WRANGLER = path.join(apiRoot, 'node_modules/.bin/wrangler');
+
+// ---- 定位 wrangler CLI ----
+// npm workspaces 会把 wrangler 提升到仓库根的 node_modules，子包 apps/api/node_modules/.bin 下通常没有；
+// 因此从脚本所在目录逐级向上查找，并用当前 node 直接执行 CLI 入口：
+// 既兼容「提升到根」和「子包本地安装」两种情况，也避开 Windows 上 .cmd 需要 shell 的限制。
+function findWranglerCli(startDir) {
+  let dir = path.resolve(startDir);
+  for (;;) {
+    const cli = path.join(dir, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+    if (existsSync(cli)) return cli;
+    const parent = path.dirname(dir);
+    if (parent === dir) return null; // 到根了
+    dir = parent;
+  }
+}
+const WRANGLER_CLI = findWranglerCli(here) ?? findWranglerCli(process.cwd());
+const runWrangler = (args) =>
+  execFileSync(process.execPath, [WRANGLER_CLI, ...args], { cwd: apiRoot, stdio: 'pipe' });
 
 // ---- 桶名：从 wrangler.jsonc 读取（JSONC，简单正则提取）----
 function bucketName() {
@@ -71,7 +105,7 @@ const remapGlobal = (p) =>
 
 /* ---------------- 收集设备图 ---------------- */
 const window = {};
-eval(readFileSync(path.join(repoRoot, 'assets/equipment-data.js'), 'utf8'));
+eval(readFileSync(legacyData, 'utf8'));
 const equipments = window.MinelinkEquipment ?? [];
 
 const equipImages = new Map(); // id -> [oldPath]
@@ -123,21 +157,30 @@ if (!tasks.length) {
 }
 
 /* ---------------- 上传到 R2 ---------------- */
+// wrangler 4.x 语法：r2 object put <bucket>/<key> --file <path>
+// （旧写法 `--key <key>` 会被拒：Unknown argument: key）
 function upload(task) {
-  execFileSync(
-    WRANGLER,
-    ['r2', 'object', 'put', BUCKET, '--key', task.key, '--file', task.local, '--content-type', ctOf(task.local)],
-    { stdio: 'pipe' }
-  );
+  runWrangler([
+    'r2',
+    'object',
+    'put',
+    `${BUCKET}/${task.key}`,
+    '--file',
+    task.local,
+    '--content-type',
+    ctOf(task.local),
+    '--remote',
+  ]);
 }
 
 if (DRY_RUN) {
   console.log(`[dry-run] 不会上传、不会写文件。桶=${BUCKET}，待处理 ${tasks.length} 个文件。\n`);
 } else {
-  if (!existsSync(WRANGLER)) {
-    console.error(`未找到 wrangler（${WRANGLER}）。请先在 apps/api 安装依赖并 wrangler login。`);
+  if (!WRANGLER_CLI) {
+    console.error('未找到 wrangler。请在仓库根执行 `npm install`（wrangler 是 apps/api 的 devDependency）。');
     process.exit(1);
   }
+  console.log(`使用 wrangler: ${WRANGLER_CLI}`);
   console.log(`开始上传 ${tasks.length} 个文件到 R2 桶 ${BUCKET} ...`);
   let ok = 0;
   for (const t of tasks) {
@@ -212,8 +255,9 @@ if (DRY_RUN) {
   console.log(`  ${path.relative(repoRoot, path.join(here, 'r2-website-image-update.sql'))}`);
   console.log(`  已改写 ${path.relative(repoRoot, wiPath)}\n`);
   console.log('下一步：');
-  console.log('  1) 应用 SQL（本地示例）：');
-  console.log('     node_modules/.bin/wrangler d1 execute minelink-db --local --file scripts/r2-equipment-image-update.sql');
-  console.log('     node_modules/.bin/wrangler d1 execute minelink-db --local --file scripts/r2-website-image-update.sql');
+  console.log('  1) 应用 SQL（远程，线上）：');
+  console.log('     npx wrangler d1 execute minelink-db --remote --file scripts/r2-equipment-image-update.sql');
+  console.log('     npx wrangler d1 execute minelink-db --remote --file scripts/r2-website-image-update.sql');
+  console.log('     （本地模拟把 --remote 换成 --local）');
   console.log('  2) 重新构建并部署：npm run deploy（seed.mjs 已改为自动生成 R2 路径，重导也会生效）');
 }

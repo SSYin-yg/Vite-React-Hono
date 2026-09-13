@@ -6,6 +6,8 @@ dist/
 # 但保留示例模板（供协作者复制为 .dev.vars）
 !.dev.vars.example
 apps/api/seed/seed.sql
+# 图片迁移脚本的生成物（可随时重跑 migrate-images-r2.mjs 重新生成）
+apps/api/scripts/r2-*.sql
 *.log
 
 # 系统文件

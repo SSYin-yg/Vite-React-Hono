@@ -5,8 +5,8 @@
 旧站是「静态 HTML + Strapi + PostgreSQL + 自托管 nginx」，本目录是迁移目标（迁移规划中的**方案 A**）：
 前端 Vite + React 19，API 用 Hono 跑在 Cloudflare Workers，数据存 D1，图片走静态资源 / R2，邮件用 Resend，广告用 Google Ads。
 
-> 仓库根是 `B2B/`（旧站 + 本应用）。本应用位于 `Vite-React-Hono-main/` 子目录，CI 也指向它。
-> 构建时会从外部目录 `B2B/assets/images` 拷贝设备图片 —— 少它构建会失败。
+> 仓库根就是本应用（`cloudflare/` 目录本身是独立仓库 `SSYin-yg/Vite-React-Hono`，分支 `main`）。
+> **构建是自包含的**：只依赖仓库内文件，不需要仓库外的任何目录 —— 云端（Cloudflare Workers Builds）构建因此可以正常工作。
 
 ## 技术栈
 
@@ -344,13 +344,18 @@ npm run admin:check -- 你的密码   # 指定密码
 
 ### 其它
 
-- 构建报找不到图片：确认 `B2B/assets/images` 存在（构建从这里拷图）
 - `no such table: equipment`：本地没跑迁移，`npm run db:migrate:local`
 - 改了 `.dev.vars` 没生效：完全停止 dev 再重启
+- `npm ci` 报 `can only install packages when your package.json and package-lock.json are in sync`：lockfile 与 package.json 不一致（例如残留了指向仓库外目录的 `file:..` 依赖）。跑一次 `npm install` 让 lockfile 追平，或手工清理 lockfile 里的多余条目
+- `wrangler r2 object put` 报 `Unknown argument: key`：wrangler 4.x 已改用 `r2 object put <bucket>/<key> --file <path>`
+- 图片迁移脚本报「未找到 wrangler」：npm workspaces 会把 wrangler 提升到**仓库根** `node_modules/`，脚本已改为逐级向上查找，无需处理
+- 线上图片全 404：R2 桶是空的，或 D1 里仍是旧路径。见「图片迁移」一节，记得把生成的两个 SQL 应用到 `--remote`
 
 ## 迁移状态
 
-已完成：旧站页面与视觉复用、设备数据（31 台）、i18n 字典、SEO（sitemap/robots/设备级 SEO）、后台全套、鉴权加固、Google Ads、客服组件、D1 迁移与种子、CI 部署。
+已完成：旧站页面与视觉复用、设备数据（31 台）、i18n 字典、SEO（sitemap/robots/设备级 SEO）、后台全套、鉴权加固、Google Ads、客服组件、D1 迁移与种子。
+
+> CI：采用 **Cloudflare Workers Builds**（Dashboard 侧配置，构建跑在 Cloudflare，无需在 GitHub 存 token）。仓库内**不再需要** `.github/workflows/`。
 
 > 说明：原版 `equipment/` 有 51 个 HTML 详情页，但只有 31 台有数据，另外 20 个页面视为旧版冗余，**不迁移**。
 
@@ -361,3 +366,13 @@ npm run admin:check -- 你的密码   # 指定密码
 - [x] `equipments` 列表接口精简投影（列表仅返回 `id` / `name` / `category` / `images`，见「接口」）
 - [x] 给 `equipment` 加列表查询复合索引（0004：`(published, sort)` + `(published, category, sort)`，见「数据模型」）
 - [x] 统一图片路由的 `/api` 前缀（上传 `POST /api/admin/images`、读取 `GET /api/images/*`，与 `/api/admin/*` 风格一致）
+- [x] 构建自包含化（旧站 6 个 CSS 内联进 `src/styles/legacy/`、`closeBundle` 拷图加存在性守卫）→ 云端构建可跑
+- [x] lockfile 与 package.json 同步（移除残留的 `minelink-b2b: file:..`）→ `npm ci` 通过
+- [x] 首次线上部署（`https://minelink-b2b.ssyin033.workers.dev`）：D1 迁移 0001~0005、R2 37 张图、seed 31 台设备、website_images 11 条
+
+待办（线上收尾）：
+
+- [ ] 把 `wrangler.jsonc` 的 `SITE_URL` / `MAIL_FROM` / `MAIL_TO` 换成真实域名（否则 sitemap 仍是 `example.com`）
+- [ ] 设置 secrets：`npx wrangler secret put ADMIN_TOKEN` / `RESEND_API_KEY`
+- [ ] Dashboard 配置 Cloudflare Workers Builds（见 `cloudflare-workers-builds-配置指南.md`）
+- [ ] 绑定自定义域名

@@ -4,6 +4,10 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Workers Logs：线上日志可在 Dashboard → Worker → Logs 直接查看，首次上线排错必备
+  "observability": {
+    "enabled": true
+  },
   "assets": {
     "directory": "../web/dist",
     "binding": "ASSETS",
@@ -13,8 +17,7 @@
     {
       "binding": "DB",
       "database_name": "minelink-db",
-      // 上线前执行 `wrangler d1 create minelink-db`，把返回的 database_id 填在这里
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "dd079fc1-6c86-41e4-b1fb-c0b8ad37fc67",
       "migrations_dir": "migrations"
     }
   ],

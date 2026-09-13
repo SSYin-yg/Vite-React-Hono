@@ -6,6 +6,7 @@
     "preview": "wrangler dev --port 8787",
     "deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply minelink-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply minelink-db --remote",
     "db:seed:local": "node scripts/seed.mjs && wrangler d1 execute minelink-db --local --file seed/seed.sql",
     "db:reset:local": "wrangler d1 execute minelink-db --local --command \"DROP TABLE IF EXISTS equipment; DROP TABLE IF EXISTS inquiries; DROP TABLE IF EXISTS mail_logs; DROP TABLE IF EXISTS site_settings; DROP TABLE IF EXISTS website_images;\" && npm run db:migrate:local && npm run db:seed:local",
     "typecheck": "tsc --noEmit"

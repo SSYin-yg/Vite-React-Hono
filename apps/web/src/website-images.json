@@ -1,13 +1,13 @@
 {
- "home_hero_1": "assets/images/equipment/Construction site 1.jpg",
- "home_hero_2": "assets/images/equipment/Construction site 2.jpg",
- "home_hero_3": "assets/images/equipment/Mining Solutions.jpg",
- "home_solutions": "assets/images/equipment/Mining Solutions.jpg",
- "about_side": "assets/images/equipment/Mining Solutions.jpg",
- "default_og_image": "assets/images/equipment/Mining Solutions.jpg",
- "site_logo": "assets/images/equipment/Mining Solutions.jpg",
- "about_hero": "assets/images/equipment/Mining Solutions.jpg",
- "support_hero": "assets/images/equipment/Mining Solutions.jpg",
- "faq_hero": "assets/images/equipment/Mining Solutions.jpg",
- "catalog_hero": "assets/images/equipment/Mining Solutions.jpg"
+  "home_hero_1": "/api/images/global/Construction site 1.jpg",
+  "home_hero_2": "/api/images/global/Construction site 2.jpg",
+  "home_hero_3": "/api/images/global/Mining Solutions.jpg",
+  "home_solutions": "/api/images/global/Mining Solutions.jpg",
+  "about_side": "/api/images/global/Mining Solutions.jpg",
+  "default_og_image": "/api/images/global/Mining Solutions.jpg",
+  "site_logo": "/api/images/global/Mining Solutions.jpg",
+  "about_hero": "/api/images/global/Mining Solutions.jpg",
+  "support_hero": "/api/images/global/Mining Solutions.jpg",
+  "faq_hero": "/api/images/global/Mining Solutions.jpg",
+  "catalog_hero": "/api/images/global/Mining Solutions.jpg"
 }
