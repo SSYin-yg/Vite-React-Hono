@@ -11,6 +11,13 @@ const repoRoot = path.resolve(here, '../../../..'); // D:/B2B
 const sq = (v) => String(v ?? '').replace(/'/g, "''");
 const j = (v) => sq(JSON.stringify(v ?? []));
 
+// 图片路径改为 R2 同源路径：assets/images/equipment/<f> -> api/images/equipment/<f>
+// （保持相对、无前导斜杠，匹配前端 src={`/${src}`} → /api/images/equipment/<f> → GET /api/images/*）
+const remapImg = (p) =>
+  typeof p === 'string' && p.startsWith('assets/images/equipment/')
+    ? 'api/images/' + p.slice('assets/images/'.length)
+    : p;
+
 const window = {};
 eval(readFileSync(path.join(repoRoot, 'assets/equipment-data.js'), 'utf8'));
 eval(readFileSync(path.join(repoRoot, 'assets/model-tables.js'), 'utf8'));
@@ -24,7 +31,7 @@ const rows = items.map((e, i) => {
   const tables = modelTables[e.id] ?? [];
   return `(
     '${sq(e.id)}', '${sq(e.cn)}', '${sq(e.en)}', '${sq(e.type)}',
-    '${j(e.images)}', '${sq(e.desc_zh)}', '${sq(e.desc_en)}',
+    '${j(e.images.map(remapImg))}', '${sq(e.desc_zh)}', '${sq(e.desc_en)}',
     '${j(e.features_zh)}', '${j(e.features_en)}', '${j(e.specs)}', '${j(tables)}',
     1, ${(CATEGORY_SORT[e.type] ?? 9) * 100 + i}
   )`;

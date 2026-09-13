@@ -122,7 +122,7 @@ app.get('/admin/inquiries', async (c) => {
 app.put('/admin/inquiries/:id', async (c) => {
   const id = Number(c.req.param('id'));
   if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'invalid id' }, 400);
-  const body = await c.req.json<{ replied?: number }>().catch(() => ({}));
+  const body = await c.req.json<{ replied?: number }>().catch(() => ({}) as { replied?: number });
   const replied = body.replied === 0 ? 0 : 1;
   await c.env.DB.prepare('UPDATE inquiries SET replied = ? WHERE id = ?')
     .bind(replied, id)

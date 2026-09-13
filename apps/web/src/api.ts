@@ -18,19 +18,27 @@ export type Equipment = {
   };
 };
 
+/** 列表精简投影：卡片只需 id/name/category/封面图，不含 specs/desc/seo 等大字段 */
+export type EquipmentSummary = {
+  id: string;
+  name: { zh: string; en: string };
+  category: string;
+  images: string[];
+};
+
 export type EquipmentPage = {
-  items: Equipment[];
+  items: EquipmentSummary[];
   total: number;
   page: number;
   pageSize: number;
   totalPages: number;
 };
 
-export async function listEquipments(category?: string): Promise<Equipment[]> {
+export async function listEquipments(category?: string): Promise<EquipmentSummary[]> {
   const qs = category ? `?category=${encodeURIComponent(category)}` : '';
   const res = await fetch(`/api/equipments${qs}`);
   if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = (await res.json()) as { items: Equipment[] };
+  const data = (await res.json()) as { items: EquipmentSummary[] };
   return data.items;
 }
 
@@ -125,7 +133,7 @@ export async function checkAdminSession(): Promise<boolean> {
   }
 }
 
-async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const token = getAdminToken();
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);

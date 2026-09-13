@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listEquipmentsPage, type Equipment } from '../api';
+import { listEquipmentsPage, type EquipmentSummary } from '../api';
 import { useSite } from '../site';
 import { HERO_IMAGES } from '../i18n';
 import { setMetaDescription } from '../seo';
@@ -21,7 +21,7 @@ const FILTERS = [
 export default function Catalog() {
   const { t, lang, base, openQuote, settings } = useSite();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [items, setItems] = useState<Equipment[]>([]);
+  const [items, setItems] = useState<EquipmentSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');

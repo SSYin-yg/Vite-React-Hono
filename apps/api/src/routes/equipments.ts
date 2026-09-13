@@ -49,6 +49,21 @@ const parse = (row: EquipmentRow) => ({
   },
 });
 
+// ===== 列表精简投影：卡片只需 id/name/category/封面图，避免拉取 specs/model_tables/features/seo 等大字段 =====
+type ListRow = {
+  id: string;
+  name_cn: string;
+  name_en: string;
+  category: string;
+  images: string;
+};
+const parseList = (row: ListRow) => ({
+  id: row.id,
+  name: { zh: row.name_cn, en: row.name_en },
+  category: row.category,
+  images: JSON.parse(row.images) as string[],
+});
+
 // slug 只允许小写字母/数字/连字符（与 PRIMARY KEY 语义一致）
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -109,18 +124,18 @@ app.get('/equipments', async (c) => {
     .first<{ c: number }>();
   const total = Number(countRow?.c ?? 0);
 
-  let sql = `SELECT * FROM equipment${whereSql} ORDER BY sort`;
+  let listSql = `SELECT id, name_cn, name_en, category, images FROM equipment${whereSql} ORDER BY sort`;
   const listParams = [...params];
   if (paginated) {
-    sql += ' LIMIT ? OFFSET ?';
+    listSql += ' LIMIT ? OFFSET ?';
     listParams.push(pageSize, (page - 1) * pageSize);
   }
-  const { results } = await c.env.DB.prepare(sql)
+  const { results } = await c.env.DB.prepare(listSql)
     .bind(...listParams)
-    .all<EquipmentRow>();
+    .all<ListRow>();
 
   return c.json({
-    items: (results ?? []).map(parse),
+    items: (results ?? []).map(parseList),
     total,
     page,
     pageSize: paginated ? pageSize : total,

@@ -6,6 +6,7 @@ import {
   getAdminEquipment,
   createEquipment,
   updateEquipment,
+  authFetch,
   type AdminEquipmentDetail,
   type EquipmentInput,
 } from '../api';
@@ -85,6 +86,25 @@ export default function EquipmentForm() {
 
   const set = (patch: Partial<EquipmentInput>) => setForm((f) => ({ ...f, ...patch }));
 
+  // 上传图片到 R2（POST /api/admin/images），把返回的 /api/images/<key> 追加到列表
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // 允许重复选择同一文件
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await authFetch('/api/admin/images', { method: 'POST', body: fd });
+      const data = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+      if (!data?.ok) throw new Error(data?.error ?? 'upload failed');
+      const url = String(data.url ?? '');
+      const rel = url.startsWith('/') ? url.slice(1) : url; // 去前导斜杠，匹配前端 src={`/${src}`}
+      set({ images: [...form.images, rel] });
+    } catch (err) {
+      setErr(String(err));
+    }
+  };
+
   const persist = async (): Promise<boolean> => {
     if (!form.id.trim()) { setErr(t('equipment.fields.slug') + ' ' + t('login.err_required')); return false; }
     setSaving(true); setErr(null);
@@ -143,7 +163,33 @@ export default function EquipmentForm() {
 
       <fieldset className="admin-fieldset">
         <legend>{t('equipment.group_content')}</legend>
-        <label>{f('image')} (一行一个)
+        <div className="admin-upload">
+          <input type="file" accept="image/*" onChange={onUpload} disabled={saving} />
+          <small style={{ display: 'block', margin: '4px 0 8px', color: '#667' }}>
+            上传到 R2（返回 /api/images/...），自动追加到列表
+          </small>
+          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', gap: 10, margin: 0 }}>
+            {form.images.map((src, i) => (
+              <li key={src + i} style={{ position: 'relative', width: 120 }}>
+                <img
+                  src={`/${src}`}
+                  alt=""
+                  style={{ width: 120, height: 80, objectFit: 'cover', border: '1px solid #ddd', borderRadius: 6 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => set({ images: form.images.filter((_, j) => j !== i) })}
+                  style={{ position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#c0392b', color: '#fff', cursor: 'pointer' }}
+                  aria-label="remove"
+                >
+                  ×
+                </button>
+                <code style={{ fontSize: 10, wordBreak: 'break-all' }}>{src}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <label style={{ display: 'block', marginTop: 8 }}>{f('image')}（手动填写 / 每行一个）
           <textarea value={toLines(form.images)} onChange={(e) => set({ images: fromLines(e.target.value) })} />
         </label>
         <div className="admin-form-grid">

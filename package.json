@@ -8,6 +8,7 @@
     "predev": "node scripts/ensure-dist.mjs",
     "dev": "concurrently -n api,web -c blue,green \"npm run dev --workspace apps/api\" \"npm run dev --workspace apps/web\"",
     "build": "npm run build --workspace apps/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "preview": "npm run build && npm run preview --workspace apps/api",
     "admin:check": "node scripts/check-admin-env.mjs",
     "db:migrate:local": "npm run db:migrate:local --workspace apps/api",

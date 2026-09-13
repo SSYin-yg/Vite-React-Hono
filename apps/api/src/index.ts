@@ -1,10 +1,10 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import equipments from './routes/equipments';
 import inquiries from './routes/inquiries';
 import site from './routes/site';
 import admin from './routes/admin';
-import { requireAdmin } from './auth';
+import { requireAdmin, type AdminEnv } from './auth';
 import seo from './routes/seo';
 import images from './routes/images';
 import { prerenderEquipment } from './prerender';
@@ -54,7 +54,7 @@ app.onError((err, c) => {
 // 表现为「密码正确却永远登不进去」。
 app.use('/api/admin/*', async (c, next) => {
   if (c.req.path === '/api/admin/login') return next();
-  return requireAdmin(c, next);
+  return requireAdmin(c as unknown as Context<AdminEnv>, next);
 });
 
 // 业务路由

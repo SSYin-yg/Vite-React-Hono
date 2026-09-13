@@ -327,9 +327,19 @@ function buildHead(
 
 function inject(
   html: string,
-  parts: { title: string; head: string; body: string; data: unknown }
+  parts: { title: string; head: string; body: string; data: unknown; lang: Lang }
 ): string {
   let out = html;
+
+  // 0) <html lang>：英文页声明 lang="en"，中文页保持/显式 lang="zh-CN"。
+  //    仅影响「不执行 JS 的爬虫」对页面语言的判定，浏览器端 SiteProvider 会再校正一次。
+  const langAttr = parts.lang === 'en' ? 'en' : 'zh-CN';
+  out = out.replace(/<html\b([^>]*)>/i, (m, attrs: string) => {
+    if (/\slang\s*=/i.test(attrs)) {
+      return m.replace(/\slang\s*=\s*("|')(?:[^"']*)\1/i, ` lang="${langAttr}"`);
+    }
+    return `<html lang="${langAttr}"${attrs}>`;
+  });
 
   // 1) title：已有则替换，没有则插到 <head> 开头
   // parts.title 是纯文本，需转义后再包成标签；用函数形式替换，避免内容里的 $ 序列被解释
@@ -426,7 +436,7 @@ export async function prerenderEquipment(
     _lang: lang,
   };
 
-  const html = inject(tpl, { title, head, body, data });
+  const html = inject(tpl, { title, head, body, data, lang });
 
   return c.html(html, 200, {
     'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSite } from '../site';
 import { HERO_IMAGES } from '../i18n';
-import { listEquipments, type Equipment } from '../api';
+import { listEquipments, type EquipmentSummary } from '../api';
 import { setMetaDescription } from '../seo';
 
 const TYPE_ZH: Record<string, string> = { mobile: '移动破碎站', crushing: '破碎制砂', screening: '筛分输送', washing: '洗砂设备', parts: '易损件' };
@@ -13,7 +13,7 @@ const SLIDES = [HERO_IMAGES.home1, HERO_IMAGES.home2, HERO_IMAGES.home3];
 export default function Home() {
   const { t, lang, base, openQuote, settings } = useSite();
   const [slide, setSlide] = useState(0);
-  const [featured, setFeatured] = useState<Equipment[]>([]);
+  const [featured, setFeatured] = useState<EquipmentSummary[]>([]);
 
   useEffect(() => {
     document.title = lang === 'zh'

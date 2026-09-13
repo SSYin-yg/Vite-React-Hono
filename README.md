@@ -15,7 +15,7 @@
 | 前端 | Vite 7 + React 19 + react-router-dom 7，纯 SPA，中英双语（`/` 与 `/en` 前缀） |
 | 后端 | Hono 4 on Cloudflare Workers（单 Worker = API + 静态资源 + SPA 回退） |
 | 数据 | Cloudflare D1（SQLite），迁移文件在 `apps/api/migrations/` |
-| 存储 | Cloudflare R2（`IMAGES` 绑定）+ 静态资源（`ASSETS`） |
+| 存储 | Cloudflare R2（桶 `minelink-images`，`IMAGES` 绑定）为图片**唯一权威源**；`ASSETS` 静态资源仅作旧站遗留兜底 |
 | 邮件 | Resend（`RESEND_API_KEY` 缺省时询盘只落库、不发信） |
 | 样式 | 手写 CSS（`index.css` 前台 / `admin.css` 后台），无 UI 框架 |
 | 部署 | `wrangler deploy`，或 GitHub Actions 推送 `main` 自动部署 |
@@ -36,8 +36,9 @@ Vite-React-Hono-main/
 │   │   │   ├── images.ts          R2 图片上传与读取
 │   │   │   └── seo.ts             sitemap.xml、robots.txt
 │   │   └── legacy-slugs.json      旧站设备 slug → 新 slug 映射（19 条）
-│   ├── migrations/                0001_init / 0002_inquiry_replied / 0003_equipment_seo
-│   ├── scripts/seed.mjs           从旧仓库资产生成种子 SQL
+│   ├── migrations/                0001_init / 0002_inquiry_replied / 0003_equipment_seo / 0004_equipment_indexes
+│   ├── scripts/seed.mjs           从旧仓库资产生成种子 SQL（设备图路径自动 remap 为 R2）
+│   ├── scripts/migrate-images-r2.mjs  一次性迁移：旧静态图上传 R2 + 生成 D1 UPDATE SQL
 │   ├── seed/seed.sql              生成的种子数据（31 台设备）
 │   ├── wrangler.jsonc             Worker 配置（D1 / R2 / assets / vars）
 │   ├── .dev.vars                  本地密钥（勿提交，参考 .dev.vars.example）
@@ -76,7 +77,7 @@ npm run dev
 - API 直连 http://127.0.0.1:8787
 - 后台 http://localhost:5173/admin（英文版 `/en/admin`）
 
-> dev 模式下 Vite 只代理 `/api`。`/sitemap.xml`、`/robots.txt`、`/images/:key` 要走 8787，或用 `npm run preview`（构建后由 wrangler 在 8787 单端口提供完整形态）。
+> dev 模式下 Vite 只代理 `/api`。`/sitemap.xml`、`/robots.txt`、`/api/images/*` 要走 8787，或用 `npm run preview`（构建后由 wrangler 在 8787 单端口提供完整形态）。
 
 ### 命令速查
 
@@ -103,8 +104,10 @@ npm run dev
 | `site_settings` | 站点键值配置（品牌名、联系方式、Google Ads 等） |
 | `website_images` | 页面公共图片（Banner / Logo） |
 
-迁移：`0001_init.sql` → `0002_inquiry_replied.sql` → `0003_equipment_seo.sql`。
+迁移：`0001_init.sql` → `0002_inquiry_replied.sql` → `0003_equipment_seo.sql` → `0004_equipment_indexes.sql`。
 线上用 `wrangler d1 migrations apply minelink-db --remote`，本地用 `--local`。
+
+列表查询复合索引（0004）：`idx_equipment_published_sort (published, sort)` 服务未筛选列表（`WHERE published=1 ORDER BY sort`，首页全量 / 目录分页），`idx_equipment_published_category_sort (published, category, sort)` 服务分类筛选列表与分类计数。经 `EXPLAIN QUERY PLAN` 验证两类查询均命中索引且无需额外排序。
 
 ## 接口
 
@@ -112,14 +115,14 @@ npm run dev
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/equipments` | 设备列表。支持 `?category=&q=&page=&pageSize=`；**带分页参数时**返回 `{items,total,page,pageSize,totalPages}`，不带则返回全量 |
+| GET | `/api/equipments` | 设备列表（**精简投影**：仅 `id` / `name` / `category` / `images`，不含 `specs` / `model_tables` / `desc` / `seo` 大字段）。支持 `?category=&q=&page=&pageSize=`；**带分页参数时**返回 `{items,total,page,pageSize,totalPages}`，不带则返回全量 |
 | GET | `/api/equipments/:slug` | 设备详情（嵌套 `name{zh,en}` / `desc` / `features` / `specs` / `modelTables` / `seo`） |
 | GET | `/api/categories` | 分类及计数（仅 published） |
 | POST | `/api/inquiries` | 提交询盘（落库 + 写 mail_logs + 可选发信） |
 | GET | `/api/site/settings` | 站点设置（驱动页头页脚与客服组件） |
 | GET | `/api/site/ads` | Google Ads 规范化配置 |
 | GET | `/api/site/images` | 页面图片，可 `?page=` |
-| GET | `/images/:key` | 从 R2 读取图片 |
+| GET | `/api/images/*` | 从 R2 读取图片（通配，支持 `equipment/<file>`、`global/<file>` 等嵌套 key） |
 | GET | `/sitemap.xml` | 站点地图（静态页 + 设备详情，中英，含 lastmod） |
 | GET | `/robots.txt` | 指向 sitemap |
 | GET | `/health` | 健康检查 |
@@ -136,9 +139,9 @@ npm run dev
 | GET | `/api/admin/inquiries` | 询盘列表，支持 `?limit=&status=&q=` 服务端过滤 |
 | PUT | `/api/admin/inquiries/:id` | 标记已回复 |
 | PUT | `/api/admin/site/settings` | 更新站点设置（`google_ads_*` 会做格式校验，非法 400 不落库） |
-| POST | `/admin/images` | 上传图片到 R2（multipart，限 10MB） |
+| POST | `/api/admin/images` | 上传图片到 R2（multipart，限 10MB） |
 
-> **路径注意**：图片路由挂在根而非 `/api`，所以上传是 `POST /admin/images`、`GET /images/:key`，与其他管理端点的 `/api/admin/...` 不同。
+> **路径注意**：图片读取/上传路由统一收在 `/api` 下——上传 `POST /api/admin/images`（受 `/api/admin/*` 鉴权中间件保护）、读取 `GET /api/images/*`，与其他管理端点 `/api/admin/...` 风格一致。
 
 ### 旧站 301
 
@@ -210,6 +213,39 @@ React 挂载后接管，视觉一致。
 > **本地怎么看效果**：dev 模式（:5173）由 Vite 提供页面且只代理 `/api`，**看不到预渲染**。
 > 需 `npm run build && npm run preview` 后访问 http://127.0.0.1:8787/equipment/<slug> 查看源码。
 
+## 图片存储（R2）
+
+全站图片（设备详情图 + 首页轮播 / 通用图）统一存入 Cloudflare R2 桶 `minelink-images`，由 Worker 经 `GET /api/images/*` 同源读取：
+
+- **设备图** key：`equipment/<filename>`；D1 里 `equipment.images` 存 `api/images/equipment/<filename>`（无前导斜杠，前端 `src=/\${src}` 拼成 `/api/images/equipment/...`），预渲染 `absUrl` 亦拼成绝对同源 URL，SEO 一致。
+- **通用图** key：`global/<filename>`；`website-images.json` 与 `i18n.ts` 的 `HERO_IMAGES` 存 `/api/images/global/<filename>`（带斜杠，适配 CSS `url()` / 绝对引用）。
+
+读取路由用通配 `GET /api/images/*`（非 `:key`），以兼容带斜杠的嵌套 key；命中后 `Cache-Control: public, max-age=86400`。上传走 `POST /api/admin/images`（鉴权，限 10MB，写入 `website_images` 并登记）。
+
+> 旧站的 `B2B/assets/images/equipment/*` 是**迁移源**而非线上源；`vite.config.ts` 的 `legacy-images` 插件仍会在构建时把该目录拷入 `dist/assets/images`，属遗留兜底，**线上图片以 R2 为准**。
+
+### 迁移脚本（一次性）
+
+`apps/api/scripts/migrate-images-r2.mjs` 负责把旧静态图搬进 R2 并改写数据：
+
+1. 解析 `assets/equipment-data.js`（设备图）+ `apps/web/src/i18n.ts`、`website-images.json`（通用图），去重后确定待上传文件
+2. 通过 `wrangler r2 object put` 上传到 `minelink-images`（前缀 `equipment/`、`global/`）
+3. 生成 `scripts/r2-equipment-image-update.sql`（UPDATE `equipment.images`）与 `scripts/r2-website-image-update.sql`（UPSERT `website_images`）
+4. 原地改写 `website-images.json` 为 R2 路径
+
+```bash
+cd apps/api
+node scripts/migrate-images-r2.mjs --dry-run   # 只打印映射与 SQL，不落库 / 不写文件
+node scripts/migrate-images-r2.mjs             # 真实上传 + 写 SQL + 改写 json
+# 上传完成后应用 SQL（生产把 --local 换 --remote）
+wrangler d1 execute minelink-db --local  --file scripts/r2-equipment-image-update.sql
+wrangler d1 execute minelink-db --local  --file scripts/r2-website-image-update.sql
+```
+
+> 执行需本机 `wrangler login` 且 `minelink-images` 桶已创建；脚本内部用 `import.meta.url` 推算仓库根（解析 `wrangler.jsonc` 的 `bucket_name`），**不依赖当前 cwd**。
+
+`apps/api/scripts/seed.mjs` 已同步：重生成 `seed.sql` 时设备图路径自动 remap 为 `images/equipment/<f>`，重导入不会覆盖回旧静态路径。
+
 ## 环境变量
 
 `apps/api/.dev.vars`（本地，勿提交；线上用 `wrangler secret put`）：
@@ -229,7 +265,7 @@ ADMIN_TOKEN=admin123   # 后台登录密码，必填
 npx wrangler login
 npx wrangler d1 create minelink-db          # 把返回的 database_id 填进 wrangler.jsonc
 npx wrangler r2 bucket create minelink-images   # 声明了 IMAGES 绑定，桶必须存在
-npx wrangler d1 migrations apply minelink-db --remote   # 0001 + 0002 + 0003
+npx wrangler d1 migrations apply minelink-db --remote   # 0001 + 0002 + 0003 + 0004
 npx wrangler secret put ADMIN_TOKEN
 npx wrangler secret put RESEND_API_KEY
 # 改 wrangler.jsonc：SITE_URL / MAIL_FROM / MAIL_TO
@@ -280,7 +316,7 @@ npm run admin:check -- 你的密码   # 指定密码
 待办：
 
 - [x] 设备详情页边缘预渲染（Worker 注入 SEO 头 + 可索引正文，见「详情页预渲染」章节）
-- [ ] 设备图片迁 R2（当前随静态资源部署，仍读 `assets/images`）
-- [ ] `equipments` 列表接口精简投影（列表场景不必返回 `specs` / `model_tables` 大字段）
-- [ ] 给 `equipment(published, category, sort)` 加复合索引
-- [ ] 统一图片路由的 `/api` 前缀（当前 `/admin/images` 与 `/api/admin/*` 不一致）
+- [x] 设备图片迁 R2（见「图片存储（R2）」章节：`migrate-images-r2.mjs` + 读取路由 `GET /api/images/*` + 数据 remap）
+- [x] `equipments` 列表接口精简投影（列表仅返回 `id` / `name` / `category` / `images`，见「接口」）
+- [x] 给 `equipment` 加列表查询复合索引（0004：`(published, sort)` + `(published, category, sort)`，见「数据模型」）
+- [x] 统一图片路由的 `/api` 前缀（上传 `POST /api/admin/images`、读取 `GET /api/images/*`，与 `/api/admin/*` 风格一致）
