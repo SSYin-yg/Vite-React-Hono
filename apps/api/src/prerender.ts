@@ -1,13 +1,10 @@
 /**
  * 设备详情页「边缘预渲染」。
  *
- * 详情页原本是纯 CSR：React 挂载后才 fetch 数据、再在 useEffect 里写 title/meta，
- * 爬虫抓到的是空壳 HTML。这里在 Worker 里直接查 D1，把 SEO 头部标签 + 可索引正文
- * 注入 index.html 后返回：
- *   - 爬虫/不执行 JS 的抓取器：拿到完整 head 与正文
- *   - 真实浏览器：同样拿到（内容一致，不算 cloaking），React 接管后由前端接管
- * 同时把设备数据以 JSON 注入 <script type="application/json">，前端直接复用，
- * 省掉首屏那次 API 请求，也消除「静态内容 → React 重渲染」的闪烁。
+ * 详情页由 Worker 直接从 D1 读取设备内容，生成与 React 详情页一致的结构：
+ *   - 爬虫/不执行 JS 的抓取器：拿到完整 head + 正文
+ *   - 真实浏览器：拿到相同正文，并由 React 接管交互
+ * 同时把同一份规范化设备数据注入 HTML，React 首屏直接复用，避免重复请求。
  */
 
 import type { Context } from 'hono';
@@ -26,8 +23,7 @@ type Bindings = {
 type Ctx = Context<{ Bindings: Bindings }>;
 type Lang = 'zh' | 'en';
 
-/** 前端据其读取注入数据，需与 apps/web/src/api.ts 的常量一致 */
-const SSR_DATA_ID = 'ssr-equipment';
+export const SSR_DATA_ID = 'ssr-equipment';
 
 const SITE_URL_FALLBACK = 'https://minelink.example.com';
 const BRAND: Record<Lang, string> = { zh: '矿联矿机', en: 'Minelink Equipment' };
@@ -35,23 +31,23 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type EquipmentRow = {
   id: string;
-  name_cn: string;
-  name_en: string;
-  category: string;
-  images: string;
-  desc_cn: string;
-  desc_en: string;
-  features_cn: string;
-  features_en: string;
-  specs: string;
-  model_tables: string;
-  intro: string;
-  seo_title_cn: string;
-  seo_title_en: string;
-  seo_desc_cn: string;
-  seo_desc_en: string;
-  seo_keywords: string;
-  published: number;
+  name_cn: string | null;
+  name_en: string | null;
+  category: string | null;
+  images: string | null;
+  desc_cn: string | null;
+  desc_en: string | null;
+  features_cn: string | null;
+  features_en: string | null;
+  specs: string | null;
+  model_tables: string | null;
+  intro: string | null;
+  seo_title_cn: string | null;
+  seo_title_en: string | null;
+  seo_desc_cn: string | null;
+  seo_desc_en: string | null;
+  seo_keywords: string | null;
+  published: number | null;
 };
 
 type ModelTable = {
@@ -61,7 +57,6 @@ type ModelTable = {
   rows: string[][];
 };
 
-/** 产品介绍段落块：小标题（渲染为 h3 锚点）+ 纯文本正文 */
 type IntroBlock = {
   title_zh: string;
   title_en: string;
@@ -69,9 +64,6 @@ type IntroBlock = {
   body_en: string;
 };
 
-/* ---------------- 转义（防 XSS / 破坏 HTML 结构） ---------------- */
-
-/** HTML 文本节点转义 */
 const esc = (s: unknown): string =>
   String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -80,7 +72,6 @@ const esc = (s: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-/** HTML 属性值转义：额外压掉换行与控制字符，避免截断标签或注入属性 */
 const attr = (s: unknown): string =>
   esc(
     String(s ?? '')
@@ -89,7 +80,6 @@ const attr = (s: unknown): string =>
       .trim()
   );
 
-/** 注入 <script> 里的 JSON：防 </script> 提前闭合与 HTML 注释序列 */
 const jsonForScript = (o: unknown): string =>
   JSON.stringify(o)
     .replace(/</g, '\\u003c')
@@ -97,8 +87,6 @@ const jsonForScript = (o: unknown): string =>
     .replace(/&/g, '\\u0026')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
-
-/* ---------------- 小工具 ---------------- */
 
 const pick = (zh: unknown, en: unknown, lang: Lang): string =>
   String((lang === 'zh' ? (zh ?? '') : (en ?? '')) ?? '').trim();
@@ -127,8 +115,6 @@ const absUrl = (base: string, path: unknown): string => {
 const siteUrl = (c: Ctx): string =>
   (c.env.SITE_URL ?? SITE_URL_FALLBACK).replace(/\/+$/, '');
 
-/* ---------------- 取模板 ---------------- */
-
 async function getTemplate(c: Ctx): Promise<string | null> {
   try {
     const url = new URL('/index.html', c.req.url);
@@ -140,15 +126,15 @@ async function getTemplate(c: Ctx): Promise<string | null> {
   }
 }
 
-/* ---------------- 正文 HTML ---------------- */
-
+/**
+ * 与 apps/web/src/pages/EquipmentDetail.tsx 保持字段、顺序和锚点一致。
+ * 前台真实的 InquiryForm 属于交互组件，SSR 阶段先输出同一 section 标题和说明，
+ * 浏览器挂载 React 后会由 InquiryForm 接管交互区域。
+ */
 function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
   const name = pick(row.name_cn, row.name_en, lang);
   const desc = pick(row.desc_cn, row.desc_en, lang);
-  const features = safeJson<string[]>(
-    lang === 'zh' ? row.features_cn : row.features_en,
-    []
-  );
+  const features = safeJson<string[]>(lang === 'zh' ? row.features_cn : row.features_en, []);
   const images = safeJson<string[]>(row.images, []);
   const specs = safeJson<{ k_zh: string; k_en: string; v: string }[]>(row.specs, []);
   const tables = safeJson<ModelTable[]>(row.model_tables, []);
@@ -160,56 +146,35 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
   const introLabel = lang === 'zh' ? '产品介绍' : 'Product Introduction';
   const modelsLabel = lang === 'zh' ? '型号表' : 'Models';
   const tocLabel = lang === 'zh' ? '本页目录' : 'On this page';
+  const inquiryLabel = lang === 'zh' ? '询盘' : 'Inquiry';
+  const inquiryHint = lang === 'zh'
+    ? '提交您的设备需求、处理能力和项目要求，我们将尽快与您联系。'
+    : 'Submit your equipment requirements, capacity targets, and project details. Our team will contact you shortly.';
   const otherPath = lang === 'zh' ? `/en/equipment/${row.id}` : `/equipment/${row.id}`;
   const prefix = lang === 'en' ? '/en' : '';
 
   const gallery = images.length
-    ? images
-        .map(
-          (src, i) =>
-            `<img src="${attr(absUrl(base, src))}" alt="${attr(name)}"${
-              i === 0 ? '' : ' loading="lazy"'
-            } />`
-        )
-        .join('\n            ')
+    ? images.map((src, i) =>
+        `<img src="${attr(absUrl(base, src))}" alt="${attr(name)}"${i === 0 ? '' : ' loading="lazy"'} />`
+      ).join('\n            ')
     : '';
 
   const featureList = features.length
-    ? `\n              <ul>\n${features
-        .map((f) => `                <li>${esc(f)}</li>`)
-        .join('\n')}\n              </ul>`
+    ? `\n              <ul>\n${features.map((f) => `                <li>${esc(f)}</li>`).join('\n')}\n              </ul>`
     : '';
 
-  /* ---------------- 产品介绍（每块 → h3 锚点 + 段落） ----------------
-     分段规则（按空行切段）必须与前端 EquipmentDetail.tsx 完全一致，
-     锚点 id 规则（intro-N）同理，否则 React 接管后目录链接会失效。 */
-  const introBlocks = intro
-    .map((b, i) => {
-      const heading = pick(b.title_zh, b.title_en, lang);
-      const body = pick(b.body_zh, b.body_en, lang);
-      if (!heading && !body) return '';
-      const paras = body
-        .split(/\n\s*\n/)
-        .map((p) => p.trim())
-        .filter(Boolean)
-        .map((p) => `<p>${esc(p)}</p>`)
-        .join('');
-      return `<div class="intro-block" id="intro-${i + 1}">${
-        heading ? `<h3>${esc(heading)}</h3>` : ''
-      }${paras}</div>`;
-    })
-    .filter(Boolean)
-    .join('');
+  const introBlocks = intro.map((b, i) => {
+    const heading = pick(b.title_zh, b.title_en, lang);
+    const body = pick(b.body_zh, b.body_en, lang);
+    if (!heading && !body) return '';
+    const paras = body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join('');
+    return `<div class="intro-block" id="intro-${i + 1}">${heading ? `<h3>${esc(heading)}</h3>` : ''}${paras}</div>`;
+  }).filter(Boolean).join('');
 
   const introSection = introBlocks
-    ? `
-        <section class="detail-section" id="intro">
-          <h2>${esc(introLabel)}</h2>
-          ${introBlocks}
-        </section>`
+    ? `\n        <section class="detail-section" id="intro"><h2>${esc(introLabel)}</h2>${introBlocks}</section>`
     : '';
 
-  /* ---------------- h 标签导航（只收录本 HTML 里真实存在的 section） ---------------- */
   const tocItems: { id: string; label: string; sub: boolean }[] = [];
   if (introBlocks) {
     tocItems.push({ id: 'intro', label: introLabel, sub: false });
@@ -223,100 +188,31 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
     const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${i + 1}`;
     tocItems.push({ id: `models-${i + 1}`, label: title, sub: false });
   });
+  tocItems.push({ id: 'inquiry', label: inquiryLabel, sub: false });
 
-  const tocHtml =
-    tocItems.length >= 2
-      ? `
-        <nav class="detail-toc" aria-label="${attr(tocLabel)}">
-          <span class="detail-toc-title">${esc(tocLabel)}</span>
-          <ul>
-${tocItems
-  .map(
-    (it) =>
-      `            <li${it.sub ? ' class="is-sub"' : ''}><a href="#${attr(
-        it.id
-      )}">${esc(it.label)}</a></li>`
-  )
-  .join('\n')}
-          </ul>
-        </nav>`
-      : '';
-
-  const specSection = specs.length
-    ? `
-        <section class="detail-section" id="specs">
-          <h2>${esc(specLabel)}</h2>
-          <table class="spec-table">
-            <tbody>
-${specs
-  .map(
-    (s) =>
-      `              <tr><th>${esc(lang === 'zh' ? s.k_zh : s.k_en)}</th><td>${esc(
-        s.v
-      )}</td></tr>`
-  )
-  .join('\n')}
-            </tbody>
-          </table>
-        </section>`
+  const tocHtml = tocItems.length >= 2
+    ? `\n        <nav class="detail-toc" aria-label="${attr(tocLabel)}"><span class="detail-toc-title">${esc(tocLabel)}</span><ul>\n${tocItems.map((it) =>
+        `            <li${it.sub ? ' class="is-sub"' : ''}><a href="#${attr(it.id)}">${esc(it.label)}</a></li>`
+      ).join('\n')}\n          </ul></nav>`
     : '';
 
-  const tableSections = tables
-    .map((tb, ti) => {
-      const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${ti + 1}`;
-      const cols = Array.isArray(tb.columns) ? tb.columns : [];
-      const rows = Array.isArray(tb.rows) ? tb.rows : [];
-      return `
-        <section class="detail-section" id="models-${ti + 1}">
-          <h2>${esc(title)}</h2>
-          <div class="table-scroll">
-            <table class="spec-table">
-              <thead>
-                <tr>${cols
-                  .map((c) => `<th>${esc(pick(c.zh, c.en, lang))}</th>`)
-                  .join('')}</tr>
-              </thead>
-              <tbody>
-${rows
-  .map(
-    (r) =>
-      `                <tr>${(Array.isArray(r) ? r : [])
-        .map((cell) => `<td>${esc(cell)}</td>`)
-        .join('')}</tr>`
-  )
-  .join('\n')}
-              </tbody>
-            </table>
-          </div>
-        </section>`;
-    })
-    .join('');
+  const specSection = specs.length
+    ? `\n        <section class="detail-section" id="specs"><h2>${esc(specLabel)}</h2><table class="spec-table"><tbody>\n${specs.map((s) =>
+        `              <tr><th>${esc(lang === 'zh' ? s.k_zh : s.k_en)}</th><td>${esc(s.v)}</td></tr>`
+      ).join('\n')}\n            </tbody></table></section>`
+    : '';
 
-  return `
-      <main class="detail">
-        <div class="shell">
-          <div class="detail-head">
-            <div class="detail-gallery">
-            ${gallery}
-            </div>
-            <div class="detail-info">
-              <p class="crumbs">
-                <a href="${attr(prefix || '/')}">${esc(homeLabel)}</a>　/　
-                <a href="${attr(prefix + '/equipment')}">${esc(catalogLabel)}</a>　/　${esc(
-    name
-  )}
-                <a class="lang-jump" href="${attr(otherPath)}">${
-    lang === 'zh' ? 'English' : '中文'
-  }</a>
-              </p>
-              <h1>${esc(name)}</h1>${desc ? `\n              <p class="desc">${esc(desc)}</p>` : ''}${featureList}
-            </div>
-          </div>${tocHtml}${introSection}${specSection}${tableSections}
-        </div>
-      </main>`;
+  const tableSections = tables.map((tb, ti) => {
+    const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${ti + 1}`;
+    const cols = Array.isArray(tb.columns) ? tb.columns : [];
+    const rows = Array.isArray(tb.rows) ? tb.rows : [];
+    return `\n        <section class="detail-section" id="models-${ti + 1}"><h2>${esc(title)}</h2><div class="table-scroll"><table class="spec-table"><thead><tr>${cols.map((col) => `<th>${esc(pick(col.zh, col.en, lang))}</th>`).join('')}</tr></thead><tbody>\n${rows.map((r) => `                <tr>${(Array.isArray(r) ? r : []).map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('\n')}\n              </tbody></table></div></section>`;
+  }).join('');
+
+  const inquirySection = `\n        <section class="detail-section" id="inquiry"><h2>${esc(inquiryLabel)}</h2><p class="desc">${esc(inquiryHint)}</p></section>`;
+
+  return `\n      <main class="detail"><div class="shell"><div class="detail-head"><div class="detail-gallery">${gallery}</div><div class="detail-info"><p class="crumbs"><a href="${attr(prefix || '/')}">${esc(homeLabel)}</a>　/　<a href="${attr(prefix + '/equipment')}">${esc(catalogLabel)}</a>　/　${esc(name)}<a class="lang-jump" href="${attr(otherPath)}">${lang === 'zh' ? 'English' : '中文'}</a></p><h1>${esc(name)}</h1>${desc ? `\n              <p class="desc">${esc(desc)}</p>` : ''}${featureList}</div></div>${tocHtml}${introSection}${specSection}${tableSections}${inquirySection}</div></main>`;
 }
-
-/* ---------------- SEO 头部 ---------------- */
 
 function buildHead(
   row: EquipmentRow,
@@ -329,10 +225,9 @@ function buildHead(
   const seoTitle = pick(row.seo_title_cn, row.seo_title_en, lang);
   const seoDesc = pick(row.seo_desc_cn, row.seo_desc_en, lang);
   const autoDesc = truncate(pick(row.desc_cn, row.desc_en, lang), 160);
-
   const title = seoTitle || (name ? `${name} | ${brand}` : brand);
   const description = seoDesc || autoDesc || fallbackDesc;
-  const keywords = pick(row.seo_keywords, row.seo_keywords, lang);
+  const keywords = row.seo_keywords ?? '';
 
   const prefix = lang === 'en' ? '/en' : '';
   const canonical = `${base}${prefix}/equipment/${encodeURIComponent(row.id)}`;
@@ -340,7 +235,6 @@ function buildHead(
   const altHref = `${base}${lang === 'zh' ? '/en' : ''}/equipment/${encodeURIComponent(row.id)}`;
   const images = safeJson<string[]>(row.images, []);
   const ogImage = images.length ? absUrl(base, images[0]) : '';
-
   const locale = lang === 'zh' ? 'zh_CN' : 'en_US';
 
   const tags: string[] = [
@@ -368,7 +262,7 @@ function buildHead(
     name,
     description,
     sku: row.id,
-    category: row.category,
+    category: row.category ?? '',
     url: canonical,
     image: images.slice(0, 5).map((i) => absUrl(base, i)),
     brand: { '@type': 'Brand', name: brand },
@@ -379,12 +273,7 @@ function buildHead(
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: lang === 'zh' ? '首页' : 'Home', item: `${base}${prefix || '/'}` },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: lang === 'zh' ? '设备中心' : 'Catalog',
-        item: `${base}${prefix}/equipment`,
-      },
+      { '@type': 'ListItem', position: 2, name: lang === 'zh' ? '设备中心' : 'Catalog', item: `${base}${prefix}/equipment` },
       { '@type': 'ListItem', position: 3, name, item: canonical },
     ],
   };
@@ -397,16 +286,11 @@ function buildHead(
   return { title, head: tags.map((t) => '    ' + t).join('\n') };
 }
 
-/* ---------------- 注入 ---------------- */
-
 function inject(
   html: string,
   parts: { title: string; head: string; body: string; data: unknown; lang: Lang }
 ): string {
   let out = html;
-
-  // 0) <html lang>：英文页声明 lang="en"，中文页保持/显式 lang="zh-CN"。
-  //    仅影响「不执行 JS 的爬虫」对页面语言的判定，浏览器端 SiteProvider 会再校正一次。
   const langAttr = parts.lang === 'en' ? 'en' : 'zh-CN';
   out = out.replace(/<html\b([^>]*)>/i, (m, attrs: string) => {
     if (/\slang\s*=/i.test(attrs)) {
@@ -415,34 +299,22 @@ function inject(
     return `<html lang="${langAttr}"${attrs}>`;
   });
 
-  // 1) title：已有则替换，没有则插到 <head> 开头
-  // parts.title 是纯文本，需转义后再包成标签；用函数形式替换，避免内容里的 $ 序列被解释
   const titleTag = `<title>${esc(parts.title)}</title>`;
-  if (/<title>[\s\S]*?<\/title>/i.test(out)) {
-    out = out.replace(/<title>[\s\S]*?<\/title>/i, () => titleTag);
-  } else if (/<head[^>]*>/i.test(out)) {
-    out = out.replace(/<head[^>]*>/i, (m) => m + '\n    ' + titleTag);
-  }
+  if (/<title>[\s\S]*?<\/title>/i.test(out)) out = out.replace(/<title>[\s\S]*?<\/title>/i, () => titleTag);
+  else if (/<head[^>]*>/i.test(out)) out = out.replace(/<head[^>]*>/i, (m) => m + '\n    ' + titleTag);
 
-  // 1.5) 移除模板自带的 description / keywords（避免与注入项重复）
   out = out.replace(/<meta\s+name=["']description["'][^>]*>\s*/gi, () => '');
   out = out.replace(/<meta\s+name=["']keywords["'][^>]*>\s*/gi, () => '');
-
-  // 2) head：SEO 标签插到 </head> 前（只替换第一处）
   out = out.includes('</head>')
     ? out.replace('</head>', () => parts.head + '\n  </head>')
     : out.replace(/<head[^>]*>/i, (m) => m + '\n  ' + parts.head);
 
-  // 3) body：填进 #root（React 挂载后会整体接管）
   const rootRe = /<div id="root"(?:\s[^>]*)?>\s*<\/div>/i;
   out = rootRe.test(out)
     ? out.replace(rootRe, () => `<div id="root">${parts.body}\n    </div>`)
     : out.replace(/<body[^>]*>/i, (m) => m + parts.body);
 
-  // 4) 数据：供前端复用，省掉首屏请求
-  const dataTag = `<script type="application/json" id="${SSR_DATA_ID}">${jsonForScript(
-    parts.data
-  )}</script>`;
+  const dataTag = `<script type="application/json" id="${SSR_DATA_ID}">${jsonForScript(parts.data)}</script>`;
   out = out.includes('</body>')
     ? out.replace('</body>', () => '    ' + dataTag + '\n  </body>')
     : out + dataTag;
@@ -450,32 +322,14 @@ function inject(
   return out;
 }
 
-/* ---------------- 入口 ---------------- */
-
-/**
- * 预渲染设备详情页。
- * 返回 null 表示「不接管」——调用方应继续走 SPA 回退。
- */
-export async function prerenderEquipment(
-  c: Ctx,
-  slug: string,
-  lang: Lang
-): Promise<Response | null> {
-  // 非设备路径（如旧的 xxx.html）交给后续路由
+export async function prerenderEquipment(c: Ctx, slug: string, lang: Lang): Promise<Response | null> {
   if (!slug || !SLUG_RE.test(slug)) return null;
-  // 调试/排障用：?_prerender=0 跳过预渲染
   if (c.req.query('_prerender') === '0') return null;
 
   const [row, settings] = await Promise.all([
-    c.env.DB.prepare('SELECT * FROM equipment WHERE id = ? AND published = 1')
-      .bind(slug)
-      .first<EquipmentRow>(),
-    c.env.DB.prepare(
-      "SELECT key, value FROM site_settings WHERE key IN ('site_name_zh','site_name_en','site_description_zh','site_description_en')"
-    ).all<{ key: string; value: string }>(),
+    c.env.DB.prepare('SELECT * FROM equipment WHERE id = ? AND published = 1').bind(slug).first<EquipmentRow>(),
+    c.env.DB.prepare("SELECT key, value FROM site_settings WHERE key IN ('site_name_zh','site_name_en','site_description_zh','site_description_en')").all<{ key: string; value: string }>(),
   ]);
-
-  // 未发布或不存在：交回 SPA，由前端显示 404
   if (!row) return null;
 
   const tpl = await getTemplate(c);
@@ -483,23 +337,18 @@ export async function prerenderEquipment(
 
   const sm = new Map((settings.results ?? []).map((r) => [r.key, String(r.value ?? '')]));
   const brand = (lang === 'zh' ? sm.get('site_name_zh') : sm.get('site_name_en')) || BRAND[lang];
-  const fallbackDesc =
-    (lang === 'zh' ? sm.get('site_description_zh') : sm.get('site_description_en')) || '';
-
+  const fallbackDesc = (lang === 'zh' ? sm.get('site_description_zh') : sm.get('site_description_en')) || '';
   const base = siteUrl(c);
   const { title, head } = buildHead(row, lang, base, brand, fallbackDesc);
   const body = buildBody(row, lang, base);
 
   const data = {
     id: row.id,
-    name: { zh: row.name_cn, en: row.name_en },
-    category: row.category,
+    name: { zh: row.name_cn ?? '', en: row.name_en ?? '' },
+    category: row.category ?? '',
     images: safeJson<string[]>(row.images, []),
-    desc: { zh: row.desc_cn, en: row.desc_en },
-    features: {
-      zh: safeJson<string[]>(row.features_cn, []),
-      en: safeJson<string[]>(row.features_en, []),
-    },
+    desc: { zh: row.desc_cn ?? '', en: row.desc_en ?? '' },
+    features: { zh: safeJson<string[]>(row.features_cn, []), en: safeJson<string[]>(row.features_en, []) },
     specs: safeJson<unknown[]>(row.specs, []),
     modelTables: safeJson<unknown[]>(row.model_tables, []),
     intro: safeJson<unknown[]>(row.intro, []),
@@ -512,7 +361,6 @@ export async function prerenderEquipment(
   };
 
   const html = inject(tpl, { title, head, body, data, lang });
-
   return c.html(html, 200, {
     'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
     'Content-Language': lang === 'zh' ? 'zh-CN' : 'en',
