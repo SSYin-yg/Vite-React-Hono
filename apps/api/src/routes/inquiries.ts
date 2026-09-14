@@ -69,7 +69,7 @@ app.get('/admin/inquiries', async (c) => {
   const current = now();
   if (follow === 'overdue') { where.push("follow_up_at <> '' AND follow_up_at < ?"); params.push(current); }
   else if (follow === 'upcoming') { where.push("follow_up_at <> '' AND follow_up_at >= ?"); params.push(current); }
-  else if (follow === 'today') { where.push("substr(follow_up_at,1,10) = date('now')"); }
+  else if (follow === 'today') { where.push("substr(follow_up_at,1,10) = substr(?,1,10)"); params.push(current); }
   if (q) { const like = `%${q}%`; where.push('(customer_name LIKE ? OR email LIKE ? OR whatsapp LIKE ? OR equipment LIKE ? OR country LIKE ? OR message LIKE ?)'); params.push(like,like,like,like,like,like); }
   const whereSql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
   const count = await c.env.DB.prepare(`SELECT COUNT(*) AS count FROM inquiries${whereSql}`).bind(...params).first<{count:number}>();
