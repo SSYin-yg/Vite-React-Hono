@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './admin.css';
 import './admin-premium.css';
+import './admin-b2b.css';
 import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { adminTr } from './i18n';
 import { getAdminToken, clearAdminToken, adminLogin, checkAdminSession, UNAUTHORIZED_EVENT } from '../api';
