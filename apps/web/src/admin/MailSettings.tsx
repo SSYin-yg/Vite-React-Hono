@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAdmin } from './context';
 import { Loader, ErrorBox, Empty, TableWrap, useToast } from './ui';
 import { getMailConfig, updateMailConfig, sendTestMail, listMailLogs, type MailConfigView, type MailLog } from '../api';
+import './mail-settings.css';
 
 type Form = { enabled: '' | '1' | '0'; from: string; to: string; cc: string; reply_to: string; subject_prefix: string; api_key: string };
 const blankForm: Form = { enabled: '', from: '', to: '', cc: '', reply_to: '', subject_prefix: '', api_key: '' };
@@ -78,8 +78,7 @@ export default function MailSettings() {
   };
 
   return <div className="mail-settings">
-    <div className="inq-head"><h2 style={{margin:0}}>{dict.title}</h2><div style={{display:'flex',gap:8,alignItems:'center'}}>{saved&&<span className="admin-ok-inline">{dict.saved}</span>}<button className="admin-btn" onClick={()=>{load();loadLogs();}} disabled={loading}>{loading?'…':t('common.refresh')}</button></div></div>
-    <p className="admin-hint">{dict.desc}</p>
+    <div className="inq-head"><div className="adm-head-text"><h2 style={{margin:0}}>{dict.title}</h2><p className="adm-head-desc">{dict.desc}</p></div><div style={{display:'flex',gap:8,alignItems:'center'}}>{saved&&<span className="admin-ok-inline">{dict.saved}</span>}<button className="admin-btn" onClick={()=>{load();loadLogs();}} disabled={loading}>{loading?'…':t('common.refresh')}</button></div></div>
     {err&&<ErrorBox>{err}</ErrorBox>}
     {loading&&!cfg?<Loader label={t('common.loading')}/>:cfg?<>
       <div className={'mail-status '+(cfg.ready?'is-ok':'is-warn')}><div><div className="mail-status-title">{cfg.ready?dict.ready_yes:dict.ready_no}</div>{!cfg.ready&&cfg.missing.length>0&&<div className="mail-status-missing">{dict.missing} {cfg.missing.join(' / ')}</div>}</div><div className="mail-status-sources"><span><SourceTag s={cfg.effective.source.apiKey} dict={dict}/> API Key</span><span><SourceTag s={cfg.effective.source.from} dict={dict}/> From</span><span><SourceTag s={cfg.effective.source.to} dict={dict}/> To</span></div></div>
@@ -93,9 +92,9 @@ export default function MailSettings() {
         <label className="admin-fieldset-grid-wide"><span>{dict.field_api_key}</span><input className="admin-input" type="password" autoComplete="off" spellCheck={false} value={form.api_key} onChange={e=>setForm(f=>({...f,api_key:e.target.value}))} placeholder={cfg.stored.has_key?`••••••••${cfg.stored.key_tail}`:'re_xxxxxxxxxxxxxxxxxxxxxxxxxx'}/><small className="admin-hint">{cfg.stored.has_key?dict.field_api_key_set_db:dict.field_api_key_hint}{cfg.effective.source.apiKey==='env'&&!cfg.stored.has_key&&<em> · {dict.field_api_key_env}</em>}</small></label>
       </div>
       <div className="admin-form-actions" style={{marginTop:14}}><button className="admin-btn admin-btn-primary" onClick={onSave} disabled={saving}>{saving?'…':dict.save}</button>{cfg.stored.has_key&&<button className="admin-btn admin-btn-danger" onClick={onClearKey} disabled={saving}>{dict.clear_key}</button>}</div>
-      <div className="mail-block"><h3 className="ss-group" style={{marginTop:24}}>{dict.test_title}</h3><div className="admin-form-actions"><input className="admin-input" style={{maxWidth:280}} placeholder={dict.test_to} value={testTo} onChange={e=>setTestTo(e.target.value)}/><button className="admin-btn" onClick={onTest} disabled={testing}>{testing?'…':dict.test_send}</button></div>{testResult&&<div className={'mail-test-result '+(testResult.ok?'is-ok':'is-warn')}><div><b>{testResult.status==='sent'?dict.test_result_sent:testResult.status==='failed'?dict.test_result_failed:dict.test_result_skipped}</b>{testResult.to.length>0&&<span> · {testResult.to.join(', ')}</span>}</div>{testResult.error&&<div className="admin-error">{testResult.error}</div>}</div>}</div>
-      <h3 className="ss-group" style={{marginTop:24}}>{dict.logs_title}</h3>
-      {logsLoading&&logs.length===0?<Loader label={t('common.loading')}/>:logs.length===0?<Empty text={dict.logs_empty}/>:<TableWrap><table className="admin-table"><thead><tr><th style={{width:120}}>{dict.logs_col_type}</th><th>{dict.logs_col_to}</th><th>{dict.logs_col_subject}</th><th style={{width:100}}>{dict.logs_col_status}</th><th style={{width:150}}>{dict.logs_col_time}</th></tr></thead><tbody>{logs.map(row=><tr key={row.id}><td><code>{row.type}</code></td><td>{row.to_addr}</td><td title={row.error??''}>{row.subject}{row.error&&<div className="admin-error" style={{marginTop:4,fontSize:12}}>{row.error}</div>}</td><td><span className={'mcfg-log-status is-'+row.status}>{row.status}</span></td><td><code className="admin-muted">{row.sent_at}</code></td></tr>)}</tbody></table></TableWrap>}
+      <div className="mail-block"><h3 className="ss-group">{dict.test_title}</h3><div className="admin-form-actions"><input className="admin-input" placeholder={dict.test_to} value={testTo} onChange={e=>setTestTo(e.target.value)}/><button className="admin-btn" onClick={onTest} disabled={testing}>{testing?'…':dict.test_send}</button></div>{testResult&&<div className={'mail-test-result '+(testResult.ok?'is-ok':'is-warn')}><div><b>{testResult.status==='sent'?dict.test_result_sent:testResult.status==='failed'?dict.test_result_failed:dict.test_result_skipped}</b>{testResult.to.length>0&&<span> · {testResult.to.join(', ')}</span>}</div>{testResult.error&&<div className="admin-error">{testResult.error}</div>}</div>}</div>
+      <h3 className="ss-group mail-logs-title">{dict.logs_title}</h3>
+      {logsLoading&&logs.length===0?<Loader label={t('common.loading')}/>:logs.length===0?<Empty text={dict.logs_empty}/>:<TableWrap><table className="admin-table"><thead><tr><th style={{width:120}}>{dict.logs_col_type}</th><th>{dict.logs_col_to}</th><th>{dict.logs_col_subject}</th><th style={{width:100}}>{dict.logs_col_status}</th><th style={{width:150}}>{dict.logs_col_time}</th></tr></thead><tbody>{logs.map(row=><tr key={row.id}><td><code>{row.type}</code></td><td>{row.to_addr}</td><td title={row.error??''}>{row.subject}{row.error&&<div className="admin-error mail-log-error">{row.error}</div>}</td><td><span className={'mcfg-log-status is-'+row.status}>{row.status}</span></td><td><code className="admin-muted">{row.sent_at}</code></td></tr>)}</tbody></table></TableWrap>}
     </>:null}
   </div>;
 }
