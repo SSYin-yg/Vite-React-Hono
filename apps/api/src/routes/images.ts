@@ -7,16 +7,12 @@ type Bindings = {
   ADMIN_TOKEN?: string;
 };
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_BYTES = 10 * 1024 * 1024;
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// 管理端点强制鉴权（未配置 ADMIN_TOKEN 时拒绝，不放行）
 app.use('/api/admin/images', requireAdmin);
 
-// 公开：按 key 读取图片（上传接口返回的 url 形如 /api/images/<key>）。
-// 用通配 * 以支持「equipment/xxx.jpg」「global/xxx.jpg」这类带斜杠的嵌套 key——
-// 旧的 /images/:key 只能匹配单段，嵌套 key 会 404。
 app.get('/api/images/*', async (c) => {
   const key = decodeURIComponent(new URL(c.req.raw.url).pathname.slice('/api/images/'.length));
   if (!key) return c.json({ error: 'not found' }, 404);
@@ -29,7 +25,6 @@ app.get('/api/images/*', async (c) => {
   return c.body(obj.body, 200, headers);
 });
 
-// 管理：上传图片到 R2，并登记到 website_images
 app.post('/api/admin/images', async (c) => {
   const form = await c.req.parseBody({ all: true });
   const file = form['file'];
@@ -38,25 +33,29 @@ app.post('/api/admin/images', async (c) => {
   const buf = await file.arrayBuffer();
   if (buf.byteLength === 0) return c.json({ error: 'empty file' }, 400);
   if (buf.byteLength > MAX_BYTES) return c.json({ error: 'file too large (>10MB)' }, 413);
+  if (!file.type.startsWith('image/')) return c.json({ error: 'only image files are allowed' }, 415);
 
-  const provided = typeof form['key'] === 'string' ? (form['key'] as string).trim() : '';
-  const key = /^[a-zA-Z0-9._/-]+$/.test(provided) ? provided : crypto.randomUUID();
+  const provided = typeof form['key'] === 'string' ? String(form['key']).trim() : '';
+  const key = /^[a-zA-Z0-9._/-]+$/.test(provided)
+    ? provided
+    : `media/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, '-')}`;
 
   await c.env.IMAGES.put(key, buf, {
     httpMetadata: { contentType: file.type || 'application/octet-stream' },
   });
 
-  const name = (typeof form['name'] === 'string' ? (form['name'] as string) : '') || file.name;
-  const page = typeof form['page'] === 'string' ? (form['page'] as string) : 'global';
-  const position = typeof form['position'] === 'string' ? (form['position'] as string) : '';
+  const name = (typeof form['name'] === 'string' ? String(form['name']) : '') || file.name;
+  const page = typeof form['page'] === 'string' ? String(form['page']) : 'global';
+  const position = typeof form['position'] === 'string' ? String(form['position']) : '';
   const url = `/api/images/${key}`;
 
   await c.env.DB.prepare(
-    `INSERT INTO website_images (key, name, page, position, url)
-     VALUES (?1,?2,?3,?4,?5)
-     ON CONFLICT(key) DO UPDATE SET name=?2, page=?3, position=?4, url=?5`
+    `INSERT INTO website_images (key, name, page, position, url, mime_type, size_bytes, created_at, updated_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,datetime('now'),datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET
+       name=?2, page=?3, position=?4, url=?5, mime_type=?6, size_bytes=?7, updated_at=datetime('now')`
   )
-    .bind(key, name, page, position, url)
+    .bind(key, name, page, position, url, file.type || 'application/octet-stream', buf.byteLength)
     .run();
 
   return c.json({ ok: true, key, url });
