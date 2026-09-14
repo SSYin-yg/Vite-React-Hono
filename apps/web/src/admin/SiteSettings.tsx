@@ -160,12 +160,12 @@ export default function SiteSettings() {
   );
 
   const tabs = useMemo(() => {
-    const next = [
-      { key: 'basic' as const, label: t('settings.group_basic'), rows: groups.basic },
-      { key: 'ads' as const, label: t('settings.group_ads'), rows: groups.ads },
-      { key: 'seo' as const, label: t('settings.group_seo'), rows: groups.seo },
+    const next: Array<{ key: TabKey; label: string; rows: Row[] }> = [
+      { key: 'basic', label: t('settings.group_basic'), rows: groups.basic },
+      { key: 'ads', label: t('settings.group_ads'), rows: groups.ads },
+      { key: 'seo', label: t('settings.group_seo'), rows: groups.seo },
     ];
-    if (groups.rest.length > 0) next.push({ key: 'rest' as const, label: t('settings.group_other'), rows: groups.rest });
+    if (groups.rest.length > 0) next.push({ key: 'rest', label: t('settings.group_other'), rows: groups.rest });
     return next;
   }, [groups, t]);
 
@@ -191,7 +191,7 @@ export default function SiteSettings() {
   const emptyState = !loading && items.length === 0 && !err;
 
   return (
-    <div className="site-settings-page">
+    <div>
       <div className="inq-head">
         <h2 style={{ margin: 0 }}>{t('nav.settings')}</h2>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -210,58 +210,57 @@ export default function SiteSettings() {
         <Empty text={t('settings.empty')} />
       ) : (
         <>
-          <div className="settings-tabs" role="tablist" aria-label={t('nav.settings')}>
+          <div className="ss-tabs" role="tablist" aria-label={t('nav.settings')}>
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
-                className={`settings-tab${active?.key === tab.key ? ' is-active' : ''}`}
                 role="tab"
-                aria-selected={active?.key === tab.key}
+                aria-selected={activeTab === tab.key}
+                className={`ss-tab${activeTab === tab.key ? ' is-active' : ''}`}
                 onClick={() => setActiveTab(tab.key)}
               >
-                <span>{tab.label}</span>
-                <em>{tab.rows.length}</em>
+                {tab.label}
+                <span className="ss-tab-count">{tab.rows.length}</span>
               </button>
             ))}
           </div>
 
-          <section className="settings-panel">
-            {active?.key === 'ads' && (
-              <p className="admin-hint ss-group-hint">{t('settings.ads_hint')}</p>
-            )}
-            {active?.key === 'seo' && (
-              <p className="admin-hint ss-group-hint">{t('settings.gsc_hint')}</p>
-            )}
+          {active && (
+            <div className="ss-panel" role="tabpanel">
+              <div className="ss-panel-head">
+                <div>
+                  <h3>{active.label}</h3>
+                  {active.key === 'ads' && <p>{t('settings.ads_hint')}</p>}
+                  {active.key === 'seo' && <p>{t('settings.gsc_hint')}</p>}
+                </div>
+              </div>
 
-            {active?.rows.length ? (
               <SettingsTable rows={active.rows} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-            ) : (
-              <Empty text={t('settings.empty')} />
-            )}
 
-            {active?.key === 'ads' && missingAds.length > 0 && (
-              <div className="admin-form-actions settings-missing-actions">
-                <span className="admin-muted">{t('settings.add')}：</span>
-                {missingAds.map((k) => (
-                  <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
-                ))}
-              </div>
-            )}
+              {active.key === 'ads' && missingAds.length > 0 && (
+                <div className="admin-form-actions ss-add-missing">
+                  <span className="admin-muted">{t('settings.add')}：</span>
+                  {missingAds.map((k) => (
+                    <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
+                  ))}
+                </div>
+              )}
 
-            {active?.key === 'seo' && missingSeo.length > 0 && (
-              <div className="admin-form-actions settings-missing-actions">
-                <span className="admin-muted">{t('settings.add')}：</span>
-                {missingSeo.map((k) => (
-                  <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
-                ))}
-              </div>
-            )}
-          </section>
+              {active.key === 'seo' && missingSeo.length > 0 && (
+                <div className="admin-form-actions ss-add-missing">
+                  <span className="admin-muted">{t('settings.add')}：</span>
+                  {missingSeo.map((k) => (
+                    <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
-      <div className="admin-form-actions settings-add-actions">
+      <div className="admin-form-actions ss-add-row" style={{ marginTop: 14 }}>
         <input className="admin-input" style={{ maxWidth: 220 }} placeholder="key" value={newKey} onChange={(e) => setNewKey(e.target.value)} />
         <input className="admin-input" style={{ maxWidth: 300 }} placeholder="value" value={newVal} onChange={(e) => setNewVal(e.target.value)} />
         <button className="admin-btn admin-btn-primary" onClick={onAdd}>{t('settings.add')}</button>
