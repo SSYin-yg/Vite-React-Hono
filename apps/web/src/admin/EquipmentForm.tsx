@@ -66,17 +66,28 @@ function JsonField({ label, value, onApply }: { label: string; value: unknown; o
 
 export default function EquipmentForm() {
   const { t, base } = useAdmin();
-  const { id } = useParams();
+  // 路由使用 :slug，不能读取不存在的 :id，否则编辑页会被当成“新增”。
+  const { slug } = useParams();
+  const isEdit = Boolean(slug);
   const navigate = useNavigate();
   const [form, setForm] = useState<EquipmentInput>(emptyForm());
   const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    getAdminEquipment(id)
+    let alive = true;
+    if (!slug) {
+      setLoading(false);
+      setForm(emptyForm());
+      return () => { alive = false; };
+    }
+
+    setLoading(true);
+    getAdminEquipment(slug)
       .then((d: AdminEquipmentDetail | null) => {
-        if (!d) { setErr(`设备不存在：${id}`); return; }
+        if (!alive) return;
+        if (!d) { setErr(`设备不存在：${slug}`); setLoading(false); return; }
         setForm({
           id: String(d.id ?? ''),
           name_cn: String(d.name_cn ?? ''),
@@ -98,9 +109,12 @@ export default function EquipmentForm() {
           seo_keywords: String(d.seo_keywords ?? ''),
           sort: d.sort == null ? undefined : Number(d.sort),
         });
+        setLoading(false);
       })
-      .catch((e) => setErr(String(e)));
-  }, [id]);
+      .catch((e) => { if (alive) { setErr(String(e)); setLoading(false); } });
+
+    return () => { alive = false; };
+  }, [slug]);
 
   const set = (patch: Partial<EquipmentInput>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -120,11 +134,12 @@ export default function EquipmentForm() {
   };
 
   const persist = async (): Promise<boolean> => {
-    const slug = form.id.trim();
-    if (!slug) { setErr(t('equipment.fields.slug') + ' ' + t('login.err_required')); return false; }
+    const slugValue = form.id.trim();
+    if (!slugValue) { setErr(t('equipment.fields.slug') + ' ' + t('login.err_required')); return false; }
     setSaving(true); setErr(null);
     try {
-      if (id) await updateEquipment(id, form); else await createEquipment(form);
+      if (isEdit && slug) await updateEquipment(slug, form);
+      else await createEquipment(form);
       return true;
     } catch (e) { setErr(String(e)); return false; }
     finally { setSaving(false); }
@@ -134,14 +149,18 @@ export default function EquipmentForm() {
   const saveAndView = async () => { if (await persist()) window.open(`/equipment/${encodeURIComponent(form.id)}`, '_blank'); };
   const f = (k: string) => t(`equipment.fields.${k}`);
 
+  if (loading) {
+    return <div className="admin-form"><div className="inq-head"><h2>{t('equipment.edit')}</h2></div><div className="admin-hint">{t('common.loading')}</div></div>;
+  }
+
   return (
     <form className="admin-form" onSubmit={submit}>
-      <div className="inq-head"><h2 style={{ margin: 0 }}>{id ? t('equipment.edit') : t('equipment.add')}</h2></div>
+      <div className="inq-head"><h2 style={{ margin: 0 }}>{isEdit ? t('equipment.edit') : t('equipment.add')}</h2></div>
       {err && <ErrorBox>{err}</ErrorBox>}
 
       <fieldset className="admin-fieldset">
         <legend>{t('equipment.group_basic')}</legend>
-        <label>{f('slug')}<input value={form.id} onChange={(e) => set({ id: e.target.value })} disabled={!!id} /></label>
+        <label>{f('slug')}<input value={form.id} onChange={(e) => set({ id: e.target.value })} disabled={isEdit} /></label>
         <div className="admin-form-grid">
           <label>{f('name')} (CN)<input value={form.name_cn} onChange={(e) => set({ name_cn: e.target.value })} /></label>
           <label>{f('name')} (EN)<input value={form.name_en} onChange={(e) => set({ name_en: e.target.value })} /></label>
@@ -201,7 +220,7 @@ export default function EquipmentForm() {
       </fieldset>
 
       <div className="admin-form-actions">
-        <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>{saving ? '…' : (id ? t('equipment.edit') : t('equipment.add'))}</button>
+        <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>{saving ? '…' : (isEdit ? t('equipment.edit') : t('equipment.add'))}</button>
         <button type="button" className="admin-btn" disabled={saving} onClick={saveAndView}>{t('equipment.save_view')}</button>
         <button type="button" className="admin-btn" onClick={() => navigate(`${base}/equipment`)}>{t('back')}</button>
       </div>
