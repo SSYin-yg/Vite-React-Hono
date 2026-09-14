@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "predev": "node scripts/ensure-dist.mjs",
+    "prebuild": "npm install --no-save --package-lock=false --include=optional @rollup/rollup-linux-x64-gnu@$(node -p \"require('rollup/package.json').version\")",
     "dev": "concurrently -n api,web -c blue,green \"npm run dev --workspace apps/api\" \"npm run dev --workspace apps/web\"",
     "build": "npm run build --workspace apps/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
