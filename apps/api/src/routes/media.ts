@@ -14,12 +14,105 @@ type MediaRow = {
   updated_at: string | null;
 };
 
+type EquipmentImageRow = {
+  id: string;
+  name_cn: string | null;
+  name_en: string | null;
+  images: string | null;
+};
+
 const app = new Hono<{ Bindings: Bindings }>();
 const MAX_LIMIT = 100;
 
 const normalizeUrl = (key: string) => `/api/images/${key}`;
 
+// 历史设备数据中的图片地址是 api/images/equipment/<file>，
+// R2 实际对象 Key 是 equipment/<file>。媒体库以 R2 Key 为唯一标识，
+// 因此这里统一做一次归一化，并把缺失的设备图片记录补回 website_images。
+const toR2Key = (value: unknown) => {
+  let s = String(value ?? '').trim().replace(/^\/+/, '');
+  if (s.startsWith('api/images/')) s = s.slice('api/images/'.length);
+  return s;
+};
+
+const imageKeyFromValue = (value: unknown) => {
+  const key = toR2Key(value);
+  return key.startsWith('equipment/') ? key : '';
+};
+
+const inferMime = (key: string) => {
+  const ext = key.split('?')[0].split('.').pop()?.toLowerCase();
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'png') return 'image/png';
+  if (ext === 'webp') return 'image/webp';
+  if (ext === 'gif') return 'image/gif';
+  if (ext === 'avif') return 'image/avif';
+  if (ext === 'svg') return 'image/svg+xml';
+  return 'image/*';
+};
+
+async function syncEquipmentMedia(db: D1Database) {
+  const { results } = await db.prepare(
+    'SELECT id,name_cn,name_en,images FROM equipment WHERE images IS NOT NULL AND images != ?'
+  ).bind('[]').all<EquipmentImageRow>();
+  if (!results?.length) return;
+
+  const existing = await db.prepare('SELECT key FROM website_images').all<{ key: string }>();
+  const known = new Set((existing.results ?? []).map((r) => r.key));
+  const statements: D1PreparedStatement[] = [];
+
+  for (const equipment of results) {
+    let images: unknown[] = [];
+    try {
+      const parsed = JSON.parse(equipment.images ?? '[]');
+      images = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      continue;
+    }
+
+    for (let index = 0; index < images.length; index++) {
+      const key = imageKeyFromValue(images[index]);
+      if (!key || known.has(key)) continue;
+      known.add(key);
+
+      const base = key.split('/').pop() || key;
+      const equipmentName = equipment.name_en || equipment.name_cn || equipment.id;
+      const name = `${equipmentName} · 图片 ${index + 1}`;
+      const position = index === 0 ? 'main' : `gallery-${index + 1}`;
+      const now = new Date().toISOString();
+
+      statements.push(db.prepare(
+        `INSERT INTO website_images
+          (key,name,page,position,url,mime_type,size_bytes,created_at,updated_at)
+         VALUES (?,?,?,?,?,?,0,?,?)
+         ON CONFLICT(key) DO UPDATE SET
+           name=CASE WHEN website_images.name='' THEN excluded.name ELSE website_images.name END,
+           page=CASE WHEN website_images.page='global' OR website_images.page='' THEN excluded.page ELSE website_images.page END,
+           position=CASE WHEN website_images.position='' THEN excluded.position ELSE website_images.position END,
+           url=excluded.url,
+           mime_type=CASE WHEN website_images.mime_type='' OR website_images.mime_type IS NULL THEN excluded.mime_type ELSE website_images.mime_type END,
+           updated_at=excluded.updated_at`
+      ).bind(
+        key,
+        name || base,
+        `equipment:${equipment.id}`,
+        position,
+        normalizeUrl(key),
+        inferMime(key),
+        now,
+        now,
+      ));
+    }
+  }
+
+  if (statements.length) await db.batch(statements);
+}
+
 app.get('/admin/media', async (c) => {
+  // 兼容既有设备数据：即使此前没有执行图片迁移 SQL，
+  // 打开媒体库时也会自动把 equipment.images 补入 website_images。
+  await syncEquipmentMedia(c.env.DB);
+
   const q = (c.req.query('q') ?? '').trim();
   const page = Math.max(1, Number(c.req.query('page') ?? 1) || 1);
   const limit = Math.min(MAX_LIMIT, Math.max(12, Number(c.req.query('limit') ?? 24) || 24));
@@ -103,7 +196,7 @@ app.delete('/admin/media/:key{.+}', async (c) => {
   for (const r of refs.results ?? []) {
     try {
       const list = JSON.parse(r.images ?? '[]');
-      if (Array.isArray(list) && list.some((v) => String(v).replace(/^\//, '').endsWith(key))) usedBy.push(r.id);
+      if (Array.isArray(list) && list.some((v) => imageKeyFromValue(v) === key)) usedBy.push(r.id);
     } catch {
       // 损坏的历史 JSON 不阻断媒体删除判断；管理员仍可通过数据库修复。
     }
