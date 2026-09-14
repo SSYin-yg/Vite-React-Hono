@@ -13,10 +13,10 @@ header .shell{height:100%;display:flex;align-items:center;justify-content:space-
 .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.5px;font-size:20px}
 .brand-mark{width:32px;height:32px;background:var(--yellow);display:grid;place-items:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:#17252c;font-family:"Barlow Condensed";font-size:24px;font-weight:700}
 .brand small{display:block;color:#849096;font-family:"Barlow Condensed";font-size:11px;letter-spacing:2px;font-weight:600;margin-top:-3px}
-nav{display:flex;align-items:center;gap:31px;font-size:14px;font-weight:600}
-nav a{transition:color 160ms var(--ease-out);position:relative}
-nav a:hover,nav a.active{color:#bd7404}
-nav a.active:after{content:"";position:absolute;height:2px;width:18px;left:0;bottom:-9px;background:var(--yellow)}
+header nav{display:flex;align-items:center;gap:31px;font-size:14px;font-weight:600}
+header nav a{transition:color 160ms var(--ease-out);position:relative}
+header nav a:hover,header nav a.active{color:#bd7404}
+header nav a.active:after{content:"";position:absolute;height:2px;width:18px;left:0;bottom:-9px;background:var(--yellow)}
 .nav-cta,.primary{border:0;cursor:pointer;background:var(--yellow);color:#1a2528;padding:11px 19px;font-weight:800;font-size:14px;transition:background 160ms var(--ease-out),transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out)}
 .nav-cta:hover,.primary:hover{background:#ffc92f;transform:translateY(-1px);box-shadow:0 4px 12px rgba(244,187,33,.25)}
 .nav-cta:active,.primary:active{transform:scale(.97)}
@@ -26,7 +26,6 @@ nav a.active:after{content:"";position:absolute;height:2px;width:18px;left:0;bot
 .cta h2{font-size:30px;margin:0 0 9px}.cta p{margin:0;color:#4e3913;font-size:14px}
 .cta .primary,.cta a{background:#17262d;color:#fff;padding:13px 25px;font-weight:800;font-size:14px;display:inline-block;transition:background 160ms var(--ease-out),transform 160ms var(--ease-out)}
 .cta a:hover,.cta .primary:hover{background:#1e333d}
-.cta a:active{transform:scale(.97)}
 footer{background:#0a1419;color:#9ba7ab;padding:42px 0 20px}
 .foot{display:flex;justify-content:space-between;gap:20px;font-size:11px;padding:24px 0}.foot a{color:#fff}
 .catalog-hero{background:linear-gradient(118deg,#0c1b22,#1d333a);color:#fff;padding:67px 0 62px;position:relative;overflow:hidden}
@@ -51,7 +50,7 @@ footer{background:#0a1419;color:#9ba7ab;padding:42px 0 20px}
 .success{display:none;background:#eef6ea;color:#34672c;padding:12px;margin-top:14px;font-size:13px}
 html[lang="en"] body{letter-spacing:.01em}
 html[lang="en"] h1{letter-spacing:-.5px;line-height:1.2}
-html[lang="en"] nav{gap:22px}
+html[lang="en"] header nav{gap:22px}
 html[lang="en"] .nav-cta,html[lang="en"] .primary{letter-spacing:.02em}
 html[lang="en"] .catalog-hero h1{max-width:16ch}
 html[lang="en"] .cta h2{letter-spacing:-.4px}
@@ -60,7 +59,7 @@ html[lang="en"] .cta h2{letter-spacing:-.4px}
 @media(max-width:860px){
   header{position:sticky;top:0}
   header .shell{position:relative}
-  nav{
+  header nav{
     display:none;
     position:absolute;
     top:100%;
@@ -79,16 +78,16 @@ html[lang="en"] .cta h2{letter-spacing:-.4px}
     border-top:1px solid #edf0ee;
     z-index:30;
   }
-  nav.open{display:flex}
-  nav a{
+  header nav.open{display:flex}
+  header nav a{
     display:flex;
     align-items:center;
     min-height:44px;
     padding:10px 4px;
     border-bottom:1px solid #eef1f1;
   }
-  nav a.active:after{display:none}
-  nav a.active{color:#bd7404}
+  header nav a.active:after{display:none}
+  header nav a.active{color:#bd7404}
   .nav-cta{
     width:100%;
     min-height:44px;
@@ -113,7 +112,7 @@ html[lang="en"] .cta h2{letter-spacing:-.4px}
   }
   .mobile-menu:focus-visible{outline:2px solid #c77a0c;outline-offset:2px}
   .cta .shell{align-items:flex-start;flex-direction:column}
-  html[lang="en"] nav{gap:2px}
+  html[lang="en"] header nav{gap:2px}
 }
 
 @media(max-width:560px){
@@ -129,11 +128,11 @@ html[lang="en"] .cta h2{letter-spacing:-.4px}
   .brand>span:last-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .brand small{font-size:9px;letter-spacing:1.4px;margin-top:1px}
   .brand-mark{width:28px;height:28px;min-width:28px;font-size:20px}
-  nav{
+  header nav{
     padding:10px 16px 16px;
     max-height:calc(100vh - 99px);
   }
-  nav a{font-size:14px;min-height:46px;padding:11px 4px}
+  header nav a{font-size:14px;min-height:46px;padding:11px 4px}
   .nav-cta{font-size:14px;min-height:46px;margin-top:10px}
   .mobile-menu{width:44px;height:44px}
   .catalog-hero{padding:44px 0}.catalog-hero h1{font-size:30px}
@@ -143,5 +142,5 @@ html[lang="en"] .cta h2{letter-spacing:-.4px}
 
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  nav a,.nav-cta,.mobile-menu{transition:none}
+  header nav a,.nav-cta,.mobile-menu{transition:none}
 }
