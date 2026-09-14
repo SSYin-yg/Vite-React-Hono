@@ -34,31 +34,34 @@ export default function EquipmentList() {
     catch (e) { setErr(String(e)); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, []);
 
   const categories = useMemo(() => [...new Set(items.map((i) => i.category).filter(Boolean))].sort(), [items]);
+  const isPublished = (it: AdminEquipmentRow) => Number(it.published) === 1;
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase();
     return items.filter((it) => {
+      const published = Number(it.published) === 1;
       if (cat && it.category !== cat) return false;
-      if (pub === '1' && !it.published) return false;
-      if (pub === '0' && it.published) return false;
-      if (kw && !`${it.id} ${it.name_cn} ${it.name_en} ${it.category}`.toLowerCase().includes(kw)) return false;
+      if (pub === '1' && !published) return false;
+      if (pub === '0' && published) return false;
+      if (kw && !`${it.id} ${it.name_cn ?? ''} ${it.name_en ?? ''} ${it.category ?? ''}`.toLowerCase().includes(kw)) return false;
       return true;
     });
   }, [items, q, cat, pub]);
 
   const togglePublish = async (it: AdminEquipmentRow) => {
+    const next = !isPublished(it);
     setBusyId(it.id);
     try {
-      await updateEquipment(it.id, { published: !it.published });
-      setItems((prev) => prev.map((x) => x.id === it.id ? { ...x, published: it.published ? 0 : 1 } : x));
+      await updateEquipment(it.id, { published: next });
+      setItems((prev) => prev.map((x) => x.id === it.id ? { ...x, published: next ? 1 : 0 } : x));
     } catch (e) { toast.err(String(e)); } finally { setBusyId(null); }
   };
   const onSort = async (it: AdminEquipmentRow, value: string) => {
-    const n = Number(value); if (!Number.isFinite(n)) return;
+    const n = Number(value); if (!Number.isInteger(n)) return;
     setBusyId(it.id);
-    try { await updateEquipment(it.id, { sort: n }); setItems((prev) => prev.map((x) => x.id === it.id ? { ...x, sort:n } : x)); }
+    try { await updateEquipment(it.id, { sort:n }); setItems((prev) => prev.map((x) => x.id === it.id ? { ...x, sort:n } : x)); }
     catch (e) { toast.err(String(e)); } finally { setBusyId(null); }
   };
   const onDelete = async (id: string) => {
@@ -68,7 +71,7 @@ export default function EquipmentList() {
     catch (e) { toast.err(String(e)); } finally { setBusyId(null); }
   };
 
-  const published = items.filter((i) => !!i.published).length;
+  const published = items.filter((i) => Number(i.published) === 1).length;
   const drafts = items.length - published;
   const firstLoad = loading && items.length === 0;
 
@@ -80,7 +83,7 @@ export default function EquipmentList() {
           <p className="adm-head-desc">产品目录运营 · {items.length} {t('equipment.total')} · {published} {t('equipment.published')}</p>
         </div>
         <div className="adm-head-actions">
-          <button className="admin-btn" onClick={load} disabled={loading}>{I.refresh}{loading ? '…' : t('inquiry.refresh')}</button>
+          <button className="admin-btn" onClick={() => void load()} disabled={loading}>{I.refresh}{loading ? '…' : t('inquiry.refresh')}</button>
           <Link to={`${base}/equipment/import`} className="admin-btn">{I.upload}{t('equipment.import')}</Link>
           <Link to={`${base}/equipment/new`} className="admin-btn admin-btn-primary">{I.plus}{t('equipment.add')}</Link>
         </div>
@@ -111,10 +114,10 @@ export default function EquipmentList() {
                 <td><code>{it.id}</code></td>
                 <td><div className="b2b-row-title">{it.name_cn || it.name_en || '—'}</div><div className="b2b-row-sub">{it.name_en && it.name_cn ? it.name_en : '—'}</div></td>
                 <td>{it.category || '—'}</td>
-                <td><button className={'eq-toggle' + (it.published ? ' is-on' : '')} disabled={busyId === it.id} onClick={() => togglePublish(it)}><span className="eq-dot" />{it.published ? t('equipment.published') : t('equipment.draft')}</button></td>
-                <td><input className="eq-sort" type="number" value={it.sort ?? 0} disabled={busyId === it.id} onChange={(e) => onSort(it, e.target.value)} /></td>
-                <td><div className="b2b-actions"><a className="b2b-icon-btn" href={`/equipment/${it.id}`} target="_blank" rel="noreferrer" title="中文预览">{I.external}</a><a className="b2b-icon-btn" href={`/en/equipment/${it.id}`} target="_blank" rel="noreferrer" title="English preview">EN</a></div></td>
-                <td><div className="b2b-actions"><Link className="b2b-icon-btn" to={`${base}/equipment/${it.id}`} title={t('equipment.edit')}>{I.edit}</Link><button className="b2b-icon-btn danger" disabled={busyId === it.id} onClick={() => onDelete(it.id)} title={t('equipment.delete')}>{I.trash}</button></div></td>
+                <td><button className={'eq-toggle' + (isPublished(it) ? ' is-on' : '')} disabled={busyId === it.id} onClick={() => void togglePublish(it)}><span className="eq-dot" />{isPublished(it) ? t('equipment.published') : t('equipment.draft')}</button></td>
+                <td><input className="eq-sort" type="number" value={it.sort ?? 0} disabled={busyId === it.id} onChange={(e) => void onSort(it, e.target.value)} /></td>
+                <td><div className="b2b-actions"><a className="b2b-icon-btn" href={`/equipment/${encodeURIComponent(it.id)}`} target="_blank" rel="noreferrer" title="中文预览">{I.external}</a><a className="b2b-icon-btn" href={`/en/equipment/${encodeURIComponent(it.id)}`} target="_blank" rel="noreferrer" title="English preview">EN</a></div></td>
+                <td><div className="b2b-actions"><Link className="b2b-icon-btn" to={`${base}/equipment/${encodeURIComponent(it.id)}`} title={t('equipment.edit')}>{I.edit}</Link><button className="b2b-icon-btn danger" disabled={busyId === it.id} onClick={() => void onDelete(it.id)} title={t('equipment.delete')}>{I.trash}</button></div></td>
               </tr>
             ))}</tbody>
           </table>
