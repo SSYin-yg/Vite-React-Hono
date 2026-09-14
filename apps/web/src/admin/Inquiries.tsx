@@ -16,7 +16,7 @@ const I = {
   close:<Icon><path d="m6 6 12 12M18 6 6 18"/></Icon>,
 };
 const dt=(v:string)=>{if(!v)return '';const d=new Date(v);return Number.isNaN(d.getTime())?v:d.toLocaleString();};
-const dtInput=(v:string)=>v?v.slice(0,16):'';
+const dtInput=(v:string)=>{if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return '';const pad=(n:number)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;};
 const statusLabel=(v:string)=>STATUS.find(x=>x[0]===v)?.[1]??v;
 const priorityLabel=(v:string)=>PRIORITY.find(x=>x[0]===v)?.[1]??v;
 
