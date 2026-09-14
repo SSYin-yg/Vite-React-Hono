@@ -20,13 +20,14 @@ async function sendInquiryMail(env: Bindings, inquiry: {
 }): Promise<{ status: 'sent' | 'failed' | 'skipped'; error?: string; to: string[]; subject: string }> {
   const cfg = await resolveMailConfig(env);
   if (!cfg.enabled) return { status: 'skipped', error: '邮件通知未启用（后台「邮件通知」可开启）', to: [], subject: '' };
-  if (!cfg.ready)
+  if (!cfg.ready) {
     return {
       status: 'skipped',
       error: `邮件配置不完整，缺少：${cfg.missing.join(' / ')}`,
       to: [],
       subject: '',
     };
+  }
 
   const baseSubject = `#${inquiry.id} ${inquiry.customer_name} - ${inquiry.equipment || '通用咨询'}`;
   const subject = `${cfg.subjectPrefix || INQUIRY_PREFIX} ${baseSubject}`.trim();
@@ -154,5 +155,3 @@ app.put('/admin/inquiries/:id', async (c) => {
 });
 
 export default app;
-</content>
-</invoke>
