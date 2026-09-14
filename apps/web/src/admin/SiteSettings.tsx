@@ -24,7 +24,9 @@ const GROUP_ADS = [
   'google_ads_body_code',
 ];
 
-const KNOWN = [...GROUP_BASIC, ...GROUP_ADS];
+const GROUP_SEO = ['gsc_verification'];
+
+const KNOWN = [...GROUP_BASIC, ...GROUP_ADS, ...GROUP_SEO];
 
 type Row = { key: string; value: string };
 
@@ -145,11 +147,15 @@ export default function SiteSettings() {
     const rest = items
       .filter((i) => !KNOWN.includes(i.key))
       .sort((a, b) => a.key.localeCompare(b.key));
-    return { basic: pick(GROUP_BASIC), ads: pick(GROUP_ADS), rest };
+    return { basic: pick(GROUP_BASIC), ads: pick(GROUP_ADS), seo: pick(GROUP_SEO), rest };
   }, [items]);
 
   const missingAds = useMemo(
     () => GROUP_ADS.filter((k) => !items.some((i) => i.key === k)),
+    [items]
+  );
+  const missingSeo = useMemo(
+    () => GROUP_SEO.filter((k) => !items.some((i) => i.key === k)),
     [items]
   );
 
@@ -203,6 +209,18 @@ export default function SiteSettings() {
             <div className="admin-form-actions" style={{ marginTop: 10, flexWrap: 'wrap' }}>
               <span className="admin-muted">{t('settings.add')}：</span>
               {missingAds.map((k) => (
+                <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
+              ))}
+            </div>
+          )}
+
+          <h3 className="ss-group">{t('settings.group_seo')}</h3>
+          <p className="admin-hint ss-group-hint">{t('settings.gsc_hint')}</p>
+          <SettingsTable rows={groups.seo} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
+          {missingSeo.length > 0 && (
+            <div className="admin-form-actions" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+              <span className="admin-muted">{t('settings.add')}：</span>
+              {missingSeo.map((k) => (
                 <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
               ))}
             </div>

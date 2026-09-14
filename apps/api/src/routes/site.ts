@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { readSettings, saveSettings } from '../settings';
+import { validateGscCode } from '../gsc';
 
 type Bindings = {
   DB: D1Database;
@@ -105,6 +106,9 @@ app.put('/admin/site/settings', async (c) => {
 
   const adsErr = validateAds(body);
   if (adsErr) return c.json({ error: adsErr }, 400);
+
+  const gscErr = validateGscCode(body['gsc_verification']);
+  if (gscErr) return c.json({ error: gscErr }, 400);
 
   await saveSettings(c.env.DB, body);
   return c.json({ ok: true });

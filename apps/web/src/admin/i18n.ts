@@ -40,9 +40,10 @@ export const adminTr = (lang: 'zh' | 'en') => {
       inquiry: { empty: '暂无询盘', contact: '联系方式', message: '留言', search: '搜索姓名/邮箱/设备/留言…', refresh: '刷新', filter_all: '全部', filter_unreplied: '未回复', filter_replied: '已回复', filter_sent: '邮件已发', filter_failed: '邮件失败', col_name: '姓名', col_phone: '电话', col_equip: '设备', col_country: '国家', col_date: '时间', col_status: '状态', replied: '已回复', unreplied: '未回复', mail_pending: '待发', mail_sent: '邮件已发', mail_failed: '邮件失败', mail_skipped: '未配置', mark_replied: '标记已回复', mark_unreplied: '取消已回复', load_more: '加载更多', total: '共' },
       settings: {
         add: '新增键', key: '键', value: '值', save: '保存', delete: '删除', saved: '已保存', save_failed: '保存失败', empty: '暂无站点设置', confirm_delete: '确认删除该配置项？',
-        group_basic: '站点与联系信息', group_ads: 'Google Ads 广告代码', group_other: '其它配置项',
+        group_basic: '站点与联系信息', group_ads: 'Google Ads 广告代码', group_other: '其它配置项', group_seo: 'Google Search Console 验证',
         hint: '这些键会影响前台显示：site_name_zh / site_name_en（品牌名）、site_description_zh / site_description_en（页脚与默认描述）、contact_phone / contact_email / contact_address（页脚联系方式）、contact_whatsapp / contact_telegram（右下角悬浮客服按钮）。保存后刷新前台即可生效。',
         ads_hint: '填写「Google Ads / gtag ID」（形如 AW-123456789）后，前台会自动注入统计代码；再填「转化标签」，访客提交询盘即自动上报转化。自定义代码仅管理员可维护，请谨慎填写。',
+        gsc_hint: '从 Google Search Console 后台「HTML 标记」验证方式复制 content 值粘贴此处；保存后全站页面源码自动带上验证 meta 标签。',
         k: {
           site_name_zh: '站点名称（中文）', site_name_en: '站点名称（英文）',
           site_description_zh: '站点描述（中文）', site_description_en: '站点描述（英文）',
@@ -53,6 +54,7 @@ contact_whatsapp: 'WhatsApp（号码或 wa.me 链接）', contact_telegram: 'Tel
           google_ads_conversion_label: '转化标签 Conversion label',
           google_ads_head_code: '自定义 Head 代码（JS）',
           google_ads_body_code: '自定义 Body 代码（HTML，通常是 noscript）',
+          gsc_verification: 'GSC 验证码（meta content 值）',
         },
       },
       mail: {
@@ -143,9 +145,10 @@ contact_whatsapp: 'WhatsApp（号码或 wa.me 链接）', contact_telegram: 'Tel
       inquiry: { empty: 'No inquiries', contact: 'Contact', message: 'Message', search: 'Search name/email/equipment/message…', refresh: 'Refresh', filter_all: 'All', filter_unreplied: 'Unreplied', filter_replied: 'Replied', filter_sent: 'Email sent', filter_failed: 'Email failed', col_name: 'Name', col_phone: 'Phone', col_equip: 'Equipment', col_country: 'Country', col_date: 'Date', col_status: 'Status', replied: 'Replied', unreplied: 'Unreplied', mail_pending: 'Pending', mail_sent: 'Sent', mail_failed: 'Failed', mail_skipped: 'No mail', mark_replied: 'Mark replied', mark_unreplied: 'Unmark', load_more: 'Load more', total: 'Total' },
       settings: {
         add: 'Add key', key: 'Key', value: 'Value', save: 'Save', delete: 'Delete', saved: 'Saved', save_failed: 'Save failed', empty: 'No site settings', confirm_delete: 'Delete this setting?',
-        group_basic: 'Site & contact', group_ads: 'Google Ads', group_other: 'Other keys',
+        group_basic: 'Site & contact', group_ads: 'Google Ads', group_other: 'Other keys', group_seo: 'Google Search Console verification',
         hint: 'These keys drive the public site: site_name_zh / site_name_en (brand), site_description_zh / site_description_en (footer & default description), contact_phone / contact_email / contact_address (footer contact), contact_whatsapp / contact_telegram (floating contact widget). Refresh the site to see changes.',
         ads_hint: 'Set "Google Ads / gtag ID" (e.g. AW-123456789) and the tracking code is injected automatically. Add a "Conversion label" and every inquiry submission reports a conversion. Custom code is admin-only — use with care.',
+        gsc_hint: 'Copy the content value from Google Search Console’s “HTML tag” verification method and paste it here; after saving, the verification meta tag is injected into every page’s source automatically.',
         k: {
           site_name_zh: 'Site name (CN)', site_name_en: 'Site name (EN)',
           site_description_zh: 'Site description (CN)', site_description_en: 'Site description (EN)',
@@ -156,6 +159,7 @@ contact_whatsapp: 'WhatsApp (number or wa.me link)', contact_telegram: 'Telegram
           google_ads_conversion_label: 'Conversion label',
           google_ads_head_code: 'Custom head code (JS)',
           google_ads_body_code: 'Custom body code (HTML, usually noscript)',
+          gsc_verification: 'GSC verification code (meta content value)',
         },
       },
       mail: {

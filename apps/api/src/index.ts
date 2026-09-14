@@ -9,6 +9,7 @@ import { requireAdmin, type AdminEnv } from './auth';
 import seo from './routes/seo';
 import images from './routes/images';
 import { prerenderEquipment } from './prerender';
+import { getGscCode, injectGscMeta } from './gsc';
 import legacySlugs from './legacy-slugs.json';
 
 type Bindings = {
@@ -30,6 +31,27 @@ app.use('*', async (c, next) => {
   c.header('X-Content-Type-Options', 'nosniff');
   c.header('X-Frame-Options', 'DENY');
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+});
+
+// 所有 HTML 响应统一注入 Google Search Console 验证标签（GSC 校验读原始 HTML）
+app.use('*', async (c, next) => {
+  await next();
+  const res = c.res;
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('text/html')) return;
+  const code = await getGscCode(c.env.DB);
+  if (!code) return;
+  try {
+    const html = await res.text();
+    const out = injectGscMeta(html, code);
+    if (out === html) return; // 已存在或无 </head>，无需改
+    // 重建响应：剥离 Content-Length（注入后正文变长，否则边缘会按旧长度截断）
+    const headers = new Headers(res.headers);
+    headers.delete('content-length');
+    c.res = new Response(out, { status: res.status, headers });
+  } catch {
+    /* 读取失败则保持原样 */
+  }
 });
 
 // 公开 API 跨域（便于本地直连 wrangler 或第三方调用；管理接口靠 Bearer 鉴权）
@@ -106,6 +128,14 @@ app.get('/en/equipment/:slug', async (c, next) => {
 
 // 未知 API 路径 → JSON 404（避免被当 SPA 回 index.html）
 app.all('/api/*', (c) => c.json({ error: 'not found', path: c.req.path }, 404));
+
+// 其余全部交给静态资源（未命中时按 SPA 规则回 index.html）
+// 根路径 SPA 入口由 Worker 显式接管：否则 Static Assets 会把 `/` 当作静态 index.html
+// 在边缘直接吐出，绕过 Worker，导致全局中间件无法注入 GSC 等动态 head 标签。
+app.get('/', async (c) => {
+  const res = await c.env.ASSETS.fetch(new Request(new URL('/index.html', c.req.url)));
+  return res;
+});
 
 // 其余全部交给静态资源（未命中时按 SPA 规则回 index.html）
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
