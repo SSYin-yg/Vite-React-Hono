@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAdmin } from './context';
 import { getSiteSettings, updateSiteSettings } from '../api';
 import { Loader, ErrorBox, Empty, TableWrap, useToast } from './ui';
+import './site-settings.css';
 
 // 分组：前台会消费的键优先展示并给友好名称
 const GROUP_BASIC = [
@@ -27,7 +28,7 @@ const GROUP_ADS = [
 const GROUP_SEO = ['gsc_verification'];
 
 const KNOWN = [...GROUP_BASIC, ...GROUP_ADS, ...GROUP_SEO];
-
+type TabKey = 'basic' | 'ads' | 'seo' | 'rest';
 type Row = { key: string; value: string };
 
 function SettingsTable({
@@ -105,11 +106,11 @@ export default function SiteSettings() {
   const [saved, setSaved] = useState(false);
   const [newKey, setNewKey] = useState('');
   const [newVal, setNewVal] = useState('');
+  const [activeTab, setActiveTab] = useState<TabKey>('basic');
 
   const load = async () => {
     setLoading(true);
     try {
-      // 后端返回 { key: value } 对象 → 转成可编辑的行数组
       const data = await getSiteSettings();
       setItems(Object.entries(data ?? {}).map(([key, value]) => ({ key, value: String(value) })));
       setErr(null);
@@ -132,7 +133,6 @@ export default function SiteSettings() {
     }
   };
 
-  // 按分组拆分；未知键归入「其它」，组内按固定顺序 + 字典序
   const groups = useMemo(() => {
     const pick = (keys: string[]) => {
       const rank = (k: string) => { const i = keys.indexOf(k); return i === -1 ? keys.length : i; };
@@ -159,11 +159,26 @@ export default function SiteSettings() {
     [items]
   );
 
+  const tabs = useMemo(() => {
+    const next = [
+      { key: 'basic' as const, label: t('settings.group_basic'), rows: groups.basic },
+      { key: 'ads' as const, label: t('settings.group_ads'), rows: groups.ads },
+      { key: 'seo' as const, label: t('settings.group_seo'), rows: groups.seo },
+    ];
+    if (groups.rest.length > 0) next.push({ key: 'rest' as const, label: t('settings.group_other'), rows: groups.rest });
+    return next;
+  }, [groups, t]);
+
+  useEffect(() => {
+    if (!tabs.some((tab) => tab.key === activeTab)) setActiveTab(tabs[0]?.key ?? 'basic');
+  }, [tabs, activeTab]);
+
+  const active = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
+
   const onAdd = () => {
     if (!newKey.trim()) return;
     save([...items, { key: newKey.trim(), value: newVal }]).then(() => { setNewKey(''); setNewVal(''); });
   };
-  // 一键补齐缺失的 Google Ads 配置键（避免手打键名出错）
   const onAddKey = (key: string) => save([...items, { key, value: '' }]);
   const onEdit = (key: string, val: string) =>
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, value: val } : i)));
@@ -176,7 +191,7 @@ export default function SiteSettings() {
   const emptyState = !loading && items.length === 0 && !err;
 
   return (
-    <div>
+    <div className="site-settings-page">
       <div className="inq-head">
         <h2 style={{ margin: 0 }}>{t('nav.settings')}</h2>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -195,47 +210,58 @@ export default function SiteSettings() {
         <Empty text={t('settings.empty')} />
       ) : (
         <>
-          {groups.basic.length > 0 && (
-            <>
-              <h3 className="ss-group">{t('settings.group_basic')}</h3>
-              <SettingsTable rows={groups.basic} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-            </>
-          )}
+          <div className="settings-tabs" role="tablist" aria-label={t('nav.settings')}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`settings-tab${active?.key === tab.key ? ' is-active' : ''}`}
+                role="tab"
+                aria-selected={active?.key === tab.key}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <span>{tab.label}</span>
+                <em>{tab.rows.length}</em>
+              </button>
+            ))}
+          </div>
 
-          <h3 className="ss-group">{t('settings.group_ads')}</h3>
-          <p className="admin-hint ss-group-hint">{t('settings.ads_hint')}</p>
-          <SettingsTable rows={groups.ads} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-          {missingAds.length > 0 && (
-            <div className="admin-form-actions" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-              <span className="admin-muted">{t('settings.add')}：</span>
-              {missingAds.map((k) => (
-                <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
-              ))}
-            </div>
-          )}
+          <section className="settings-panel">
+            {active?.key === 'ads' && (
+              <p className="admin-hint ss-group-hint">{t('settings.ads_hint')}</p>
+            )}
+            {active?.key === 'seo' && (
+              <p className="admin-hint ss-group-hint">{t('settings.gsc_hint')}</p>
+            )}
 
-          <h3 className="ss-group">{t('settings.group_seo')}</h3>
-          <p className="admin-hint ss-group-hint">{t('settings.gsc_hint')}</p>
-          <SettingsTable rows={groups.seo} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-          {missingSeo.length > 0 && (
-            <div className="admin-form-actions" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-              <span className="admin-muted">{t('settings.add')}：</span>
-              {missingSeo.map((k) => (
-                <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
-              ))}
-            </div>
-          )}
+            {active?.rows.length ? (
+              <SettingsTable rows={active.rows} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
+            ) : (
+              <Empty text={t('settings.empty')} />
+            )}
 
-          {groups.rest.length > 0 && (
-            <>
-              <h3 className="ss-group">{t('settings.group_other')}</h3>
-              <SettingsTable rows={groups.rest} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-            </>
-          )}
+            {active?.key === 'ads' && missingAds.length > 0 && (
+              <div className="admin-form-actions settings-missing-actions">
+                <span className="admin-muted">{t('settings.add')}：</span>
+                {missingAds.map((k) => (
+                  <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
+                ))}
+              </div>
+            )}
+
+            {active?.key === 'seo' && missingSeo.length > 0 && (
+              <div className="admin-form-actions settings-missing-actions">
+                <span className="admin-muted">{t('settings.add')}：</span>
+                {missingSeo.map((k) => (
+                  <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
 
-      <div className="admin-form-actions" style={{ marginTop: 14 }}>
+      <div className="admin-form-actions settings-add-actions">
         <input className="admin-input" style={{ maxWidth: 220 }} placeholder="key" value={newKey} onChange={(e) => setNewKey(e.target.value)} />
         <input className="admin-input" style={{ maxWidth: 300 }} placeholder="value" value={newVal} onChange={(e) => setNewVal(e.target.value)} />
         <button className="admin-btn admin-btn-primary" onClick={onAdd}>{t('settings.add')}</button>
