@@ -122,7 +122,7 @@ export default function MailSettings() {
       else payload.reply_to = '';
       if (form.subject_prefix.trim()) payload.subject_prefix = form.subject_prefix.trim();
       // api_key：永远只有用户显式填写时才发（为空 = 不变）；显式清空则单独设空字符串
-      if (form.api_key !== '') payload.api_key = form.api_key; // 显式空字符串由"清除"按钮走
+      if (form.api_key !== '') payload.api_key = form.api_key; // 显式空字符串由“清除”按钮走
       const next = await updateMailConfig(payload);
       setCfg(next);
       setForm(formFrom(next.stored));
@@ -179,20 +179,16 @@ export default function MailSettings() {
       </div>
 
       <p className="admin-hint">{dict.desc}</p>
-
       {err && <ErrorBox>{err}</ErrorBox>}
 
       {loading && !cfg ? (
         <Loader label={t('common.loading')} />
       ) : cfg ? (
         <>
-          {/* 状态卡片：是否可发信、各字段当前来自哪里 */}
           <div className={'mail-status ' + (cfg.ready ? 'is-ok' : 'is-warn')}>
             <div>
               <div className="mail-status-title">{cfg.ready ? dict.ready_yes : dict.ready_no}</div>
-              {!cfg.ready && cfg.missing.length > 0 && (
-                <div className="mail-status-missing">{dict.missing} {cfg.missing.join(' / ')}</div>
-              )}
+              {!cfg.ready && cfg.missing.length > 0 && <div className="mail-status-missing">{dict.missing} {cfg.missing.join(' / ')}</div>}
             </div>
             <div className="mail-status-sources">
               <span><SourceTag s={cfg.source.apiKey} dict={dict} /> API Key</span>
@@ -201,132 +197,64 @@ export default function MailSettings() {
             </div>
           </div>
 
-          {/* 配置表单 */}
           <div className="admin-form-grid">
             <label>
-              <span><input
-                type="checkbox"
-                checked={form.enabled === '1'}
-                onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked ? '1' : '0' }))}
-              /> {dict.field_enabled}</span>
+              <span><input type="checkbox" checked={form.enabled === '1'} onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked ? '1' : '0' }))} /> {dict.field_enabled}</span>
               <small className="admin-hint">{form.enabled === '' ? t('mail.field_enabled_hint_auto') : (form.enabled === '1' ? t('mail.field_enabled_hint_on') : t('mail.field_enabled_hint_off'))}</small>
             </label>
-
             <label>
               <span>{dict.field_from}</span>
               <input className="admin-input" value={form.from} onChange={(e) => setForm((f) => ({ ...f, from: e.target.value }))} placeholder="Minelink <noreply@yourdomain.com>" />
               <small className="admin-hint">{dict.field_from_hint}</small>
             </label>
-
             <label>
               <span>{dict.field_to}</span>
               <textarea className="admin-input" rows={2} value={form.to} onChange={(e) => setForm((f) => ({ ...f, to: e.target.value }))} placeholder="sales@yourdomain.com" />
               <small className="admin-hint">{dict.field_to_hint}</small>
             </label>
-
             <label>
               <span>{dict.field_cc}</span>
               <textarea className="admin-input" rows={2} value={form.cc} onChange={(e) => setForm((f) => ({ ...f, cc: e.target.value }))} />
             </label>
-
             <label>
               <span>{dict.field_reply_to}</span>
               <input className="admin-input" value={form.reply_to} onChange={(e) => setForm((f) => ({ ...f, reply_to: e.target.value }))} placeholder="no-reply@yourdomain.com" />
             </label>
-
             <label>
               <span>{dict.field_subject_prefix}</span>
               <input className="admin-input" value={form.subject_prefix} onChange={(e) => setForm((f) => ({ ...f, subject_prefix: e.target.value }))} placeholder="[询盘]" />
               <small className="admin-hint">{dict.field_subject_prefix_hint}</small>
             </label>
-
             <label className="admin-fieldset-grid-wide">
               <span>{dict.field_api_key}</span>
-              <input
-                className="admin-input"
-                type="password"
-                autoComplete="off"
-                spellCheck={false}
-                value={form.api_key}
-                onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))}
-                placeholder={cfg.stored.has_key ? `••••••••${cfg.stored.key_tail}` : 're_xxxxxxxxxxxxxxxxxxxxxxxxxx'}
-              />
-              <small className="admin-hint">
-                {cfg.stored.has_key ? dict.field_api_key_set_db : dict.field_api_key_hint}
-                {cfg.source.apiKey === 'env' && cfg.stored.has_key === false && <em> · {dict.field_api_key_env}</em>}
-              </small>
+              <input className="admin-input" type="password" autoComplete="off" spellCheck={false} value={form.api_key} onChange={(e) => setForm((f) => ({ ...f, api_key: e.target.value }))} placeholder={cfg.stored.has_key ? `••••••••${cfg.stored.key_tail}` : 're_xxxxxxxxxxxxxxxxxxxxxxxxxx'} />
+              <small className="admin-hint">{cfg.stored.has_key ? dict.field_api_key_set_db : dict.field_api_key_hint}{cfg.source.apiKey === 'env' && !cfg.stored.has_key && <em> · {dict.field_api_key_env}</em>}</small>
             </label>
           </div>
 
           <div className="admin-form-actions" style={{ marginTop: 14 }}>
-            <button className="admin-btn admin-btn-primary" onClick={onSave} disabled={saving}>
-              {saving ? '…' : dict.save}
-            </button>
-            {cfg.stored.has_key && (
-              <button className="admin-btn admin-btn-danger" onClick={onClearKey} disabled={saving}>{t('mail.clear_key')}</button>
-            )}
+            <button className="admin-btn admin-btn-primary" onClick={onSave} disabled={saving}>{saving ? '…' : dict.save}</button>
+            {cfg.stored.has_key && <button className="admin-btn admin-btn-danger" onClick={onClearKey} disabled={saving}>{t('mail.clear_key')}</button>}
           </div>
 
-          {/* 测试发送 */}
           <div className="mail-block">
             <h3 className="ss-group" style={{ marginTop: 24 }}>{dict.test_title}</h3>
             <div className="admin-form-actions">
-              <input
-                className="admin-input"
-                style={{ maxWidth: 280 }}
-                placeholder={dict.test_to}
-                value={testTo}
-                onChange={(e) => setTestTo(e.target.value)}
-              />
-              <button className="admin-btn" onClick={onTest} disabled={testing}>
-                {testing ? '…' : dict.test_send}
-              </button>
+              <input className="admin-input" style={{ maxWidth: 280 }} placeholder={dict.test_to} value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+              <button className="admin-btn" onClick={onTest} disabled={testing}>{testing ? '…' : dict.test_send}</button>
             </div>
-            {testResult && (
-              <div className={'mail-test-result ' + (testResult.ok ? 'is-ok' : 'is-warn')}>
-                <div>
-                  <b>{testResult.status === 'sent' ? t('mail.test_result_sent') : testResult.status === 'failed' ? t('mail.test_result_failed') : t('mail.test_result_skipped')}</b>
-                  {testResult.to.length > 0 && <span> · {testResult.to.join(', ')}</span>}
-                </div>
-                {testResult.error && <div className="admin-error">{testResult.error}</div>}
-              </div>
-            )}
+            {testResult && <div className={'mail-test-result ' + (testResult.ok ? 'is-ok' : 'is-warn')}><div><b>{testResult.status === 'sent' ? t('mail.test_result_sent') : testResult.status === 'failed' ? t('mail.test_result_failed') : t('mail.test_result_skipped')}</b>{testResult.to.length > 0 && <span> · {testResult.to.join(', ')}</span>}</div>{testResult.error && <div className="admin-error">{testResult.error}</div>}</div>}
           </div>
 
-          {/* 最近发送记录 */}
           <h3 className="ss-group" style={{ marginTop: 24 }}>{dict.logs_title}</h3>
-          {logsLoading && logs.length === 0 ? (
-            <Loader label={t('common.loading')} />
-          ) : logs.length === 0 ? (
-            <Empty text={dict.logs_empty} />
-          ) : (
+          {logsLoading && logs.length === 0 ? <Loader label={t('common.loading')} /> : logs.length === 0 ? <Empty text={dict.logs_empty} /> : (
             <TableWrap>
               <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 120 }}>{dict.logs_col_type}</th>
-                    <th>{dict.logs_col_to}</th>
-                    <th>{dict.logs_col_subject}</th>
-                    <th style={{ width: 100 }}>{dict.logs_col_status}</th>
-                    <th style={{ width: 150 }}>{dict.logs_col_time}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((row) => (
-                    <tr key={row.id}>
-                      <td><code>{row.type}</code></td>
-                      <td>{row.to_addr}</td>
-                      <td title={row.error ?? ''}>
-                        {row.subject}
-                        {row.error && <div className="admin-error" style={{ marginTop: 4, fontSize: 12 }}>{row.error}</div>}
-                      </td>
-                      <td>
-                        <span className={'mcfg-log-status is-' + row.status}>{row.status}</span>
-                      </td>
-                      <td><code className="admin-muted">{row.sent_at}</code></td>
-                    </tr>
-                  ))}
-                </tbody>
+                <thead><tr><th style={{ width: 120 }}>{dict.logs_col_type}</th><th>{dict.logs_col_to}</th><th>{dict.logs_col_subject}</th><th style={{ width: 100 }}>{dict.logs_col_status}</th><th style={{ width: 150 }}>{dict.logs_col_time}</th></tr></thead>
+                <tbody>{logs.map((row) => <tr key={row.id}>
+                  <td><code>{row.type}</code></td><td>{row.to_addr}</td><td title={row.error ?? ''}>{row.subject}{row.error && <div className="admin-error" style={{ marginTop: 4, fontSize: 12 }}>{row.error}</div>}</td>
+                  <td><span className={'mcfg-log-status is-' + row.status}>{row.status}</span></td><td><code className="admin-muted">{row.sent_at}</code></td>
+                </tr>)}</tbody>
               </table>
             </TableWrap>
           )}
@@ -336,101 +264,27 @@ export default function MailSettings() {
   );
 }
 
-/** 把 mail 段词条集中成 dict，避免每处 t('mail.xxx') 重复 */
 type MailDict = {
-  title: string;
-  desc: string;
-  source_db: string;
-  source_env: string;
-  source_none: string;
-  ready_yes: string;
-  ready_no: string;
-  missing: string;
-  field_enabled: string;
-  field_enabled_hint_auto: string;
-  field_enabled_hint_on: string;
-  field_enabled_hint_off: string;
-  field_from: string;
-  field_from_hint: string;
-  field_to: string;
-  field_to_hint: string;
-  field_cc: string;
-  field_reply_to: string;
-  field_subject_prefix: string;
-  field_subject_prefix_hint: string;
-  field_api_key: string;
-  field_api_key_hint: string;
-  field_api_key_set_db: string;
-  field_api_key_env: string;
-  save: string;
-  saved: string;
-  save_failed: string;
-  clear_key: string;
-  confirm_clear_key: string;
-  key_cleared: string;
-  test_title: string;
-  test_to: string;
-  test_send: string;
-  test_result_sent: string;
-  test_result_failed: string;
-  test_result_skipped: string;
-  test_result_err_required: string;
-  logs_title: string;
-  logs_empty: string;
-  logs_col_type: string;
-  logs_col_to: string;
-  logs_col_subject: string;
-  logs_col_status: string;
-  logs_col_time: string;
-  logs_col_error: string;
+  title: string; desc: string; source_db: string; source_env: string; source_none: string; ready_yes: string; ready_no: string; missing: string;
+  field_enabled: string; field_enabled_hint_auto: string; field_enabled_hint_on: string; field_enabled_hint_off: string;
+  field_from: string; field_from_hint: string; field_to: string; field_to_hint: string; field_cc: string; field_reply_to: string;
+  field_subject_prefix: string; field_subject_prefix_hint: string; field_api_key: string; field_api_key_hint: string;
+  field_api_key_set_db: string; field_api_key_env: string; save: string; saved: string; save_failed: string; clear_key: string;
+  confirm_clear_key: string; key_cleared: string; test_title: string; test_to: string; test_send: string;
+  test_result_sent: string; test_result_failed: string; test_result_skipped: string; test_result_err_required: string;
+  logs_title: string; logs_empty: string; logs_col_type: string; logs_col_to: string; logs_col_subject: string;
+  logs_col_status: string; logs_col_time: string; logs_col_error: string;
 };
 
 const dictFrom = (t: (k: string) => string): MailDict => ({
-  title: t('mail.title'),
-  desc: t('mail.desc'),
-  source_db: t('mail.source_db'),
-  source_env: t('mail.source_env'),
-  source_none: t('mail.source_none'),
-  ready_yes: t('mail.ready_yes'),
-  ready_no: t('mail.ready_no'),
-  missing: t('mail.missing'),
-  field_enabled: t('mail.field_enabled'),
-  field_enabled_hint_auto: t('mail.field_enabled_hint_auto'),
-  field_enabled_hint_on: t('mail.field_enabled_hint_on'),
-  field_enabled_hint_off: t('mail.field_enabled_hint_off'),
-  field_from: t('mail.field_from'),
-  field_from_hint: t('mail.field_from_hint'),
-  field_to: t('mail.field_to'),
-  field_to_hint: t('mail.field_to_hint'),
-  field_cc: t('mail.field_cc'),
-  field_reply_to: t('mail.field_reply_to'),
-  field_subject_prefix: t('mail.field_subject_prefix'),
-  field_subject_prefix_hint: t('mail.field_subject_prefix_hint'),
-  field_api_key: t('mail.field_api_key'),
-  field_api_key_hint: t('mail.field_api_key_hint'),
-  field_api_key_set_db: t('mail.field_api_key_set_db'),
-  field_api_key_env: t('mail.field_api_key_env'),
-  save: t('mail.save'),
-  saved: t('mail.saved'),
-  save_failed: t('mail.save_failed'),
-  clear_key: t('mail.clear_key'),
-  confirm_clear_key: t('mail.confirm_clear_key'),
-  key_cleared: t('mail.key_cleared'),
-  test_title: t('mail.test_title'),
-  test_to: t('mail.test_to'),
-  test_send: t('mail.test_send'),
-  test_result_sent: t('mail.test_result_sent'),
-  test_result_failed: t('mail.test_result_failed'),
-  test_result_skipped: t('mail.test_result_skipped'),
-  test_result_err_required: t('mail.test_result_err_required'),
-  logs_title: t('mail.logs_title'),
-  logs_empty: t('mail.logs_empty'),
-  logs_col_type: t('mail.logs_col_type'),
-  logs_col_to: t('mail.logs_col_to'),
-  logs_col_subject: t('mail.logs_col_subject'),
-  logs_col_status: t('mail.logs_col_status'),
-  logs_col_time: t('mail.logs_col_time'),
-  logs_col_error: t('mail.logs_col_error'),
+  title: t('mail.title'), desc: t('mail.desc'), source_db: t('mail.source_db'), source_env: t('mail.source_env'), source_none: t('mail.source_none'),
+  ready_yes: t('mail.ready_yes'), ready_no: t('mail.ready_no'), missing: t('mail.missing'), field_enabled: t('mail.field_enabled'),
+  field_enabled_hint_auto: t('mail.field_enabled_hint_auto'), field_enabled_hint_on: t('mail.field_enabled_hint_on'), field_enabled_hint_off: t('mail.field_enabled_hint_off'),
+  field_from: t('mail.field_from'), field_from_hint: t('mail.field_from_hint'), field_to: t('mail.field_to'), field_to_hint: t('mail.field_to_hint'),
+  field_cc: t('mail.field_cc'), field_reply_to: t('mail.field_reply_to'), field_subject_prefix: t('mail.field_subject_prefix'), field_subject_prefix_hint: t('mail.field_subject_prefix_hint'),
+  field_api_key: t('mail.field_api_key'), field_api_key_hint: t('mail.field_api_key_hint'), field_api_key_set_db: t('mail.field_api_key_set_db'), field_api_key_env: t('mail.field_api_key_env'),
+  save: t('mail.save'), saved: t('mail.saved'), save_failed: t('mail.save_failed'), clear_key: t('mail.clear_key'), confirm_clear_key: t('mail.confirm_clear_key'), key_cleared: t('mail.key_cleared'),
+  test_title: t('mail.test_title'), test_to: t('mail.test_to'), test_send: t('mail.test_send'), test_result_sent: t('mail.test_result_sent'), test_result_failed: t('mail.test_result_failed'),
+  test_result_skipped: t('mail.test_result_skipped'), test_result_err_required: t('mail.test_result_err_required'), logs_title: t('mail.logs_title'), logs_empty: t('mail.logs_empty'),
+  logs_col_type: t('mail.logs_col_type'), logs_col_to: t('mail.logs_col_to'), logs_col_subject: t('mail.logs_col_subject'), logs_col_status: t('mail.logs_col_status'), logs_col_time: t('mail.logs_col_time'), logs_col_error: t('mail.logs_col_error'),
 });
-</content>
-</invoke>
