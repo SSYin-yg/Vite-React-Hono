@@ -51,8 +51,8 @@ export async function listEquipments(category?: string): Promise<EquipmentSummar
   const qs = category ? `?category=${encodeURIComponent(category)}` : '';
   const res = await fetch(`/api/equipments${qs}`);
   if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = (await res.json()) as { items: EquipmentSummary[] };
-  return data.items;
+  const data = (await res.json()) as { items?: EquipmentSummary[] };
+  return Array.isArray(data.items) ? data.items : [];
 }
 
 export async function getEquipment(slug: string): Promise<Equipment | null> {
@@ -74,7 +74,14 @@ export async function listEquipmentsPage(
   const qs = sp.toString();
   const res = await fetch(`/api/equipments${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(`API ${res.status}`);
-  return (await res.json()) as EquipmentPage;
+  const data = (await res.json()) as Partial<EquipmentPage>;
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    total: Number(data.total ?? 0),
+    page: Number(data.page ?? 1),
+    pageSize: Number(data.pageSize ?? 0),
+    totalPages: Number(data.totalPages ?? 1),
+  };
 }
 
 export async function submitInquiry(payload: {
@@ -90,8 +97,8 @@ export async function submitInquiry(payload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? `API ${res.status}`);
+  const data = await res.json().catch(() => ({} as Record<string, unknown>));
+  if (!res.ok) throw new Error(String(data.error ?? `API ${res.status}`));
   return data as { ok: true; id: number };
 }
 
@@ -122,8 +129,9 @@ export async function adminLogin(password: string): Promise<{ token: string; exp
   });
   const data = await res.json().catch(() => ({} as Record<string, unknown>));
   if (!res.ok) {
-    const err = new Error(String(data?.error ?? `API ${res.status}`)) as Error & { code?: string };
+    const err = new Error(String(data?.error ?? `API ${res.status}`)) as Error & { code?: string; status?: number };
     err.code = String(data?.error ?? '');
+    err.status = res.status;
     throw err;
   }
   setAdminToken(data.token as string);
@@ -150,7 +158,12 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
   const token = getAdminToken();
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+
+  // JSON 请求自动补 Content-Type；FormData 必须让浏览器自行生成 multipart boundary。
+  if (init.body && !headers.has('Content-Type') && !(init.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const res = await fetch(url, { ...init, headers });
   if (res.status === 401) {
     clearAdminToken();
@@ -160,8 +173,11 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
   }
   if (!res.ok) {
     let msg = `API ${res.status}`;
-    try { const d = await res.json(); if (d?.error) msg = d.error; } catch { /* ignore */ }
-    throw new Error(msg);
+    try { const d = await res.json(); if (d?.error) msg = String(d.error); } catch { /* ignore */ }
+    const err = new Error(msg) as Error & { status?: number; code?: string };
+    err.status = res.status;
+    err.code = msg;
+    throw err;
   }
   return res;
 }
@@ -178,8 +194,8 @@ export type AdminEquipmentRow = {
 
 export async function listAdminEquipments(): Promise<AdminEquipmentRow[]> {
   const res = await authFetch('/api/admin/equipments');
-  const data = (await res.json()) as { items: AdminEquipmentRow[] };
-  return data.items ?? [];
+  const data = (await res.json().catch(() => ({}))) as { items?: AdminEquipmentRow[] };
+  return Array.isArray(data.items) ? data.items : [];
 }
 
 /* 设备：管理详情（原始行，含 JSON 字段与 published / sort） */
@@ -188,14 +204,14 @@ export type AdminEquipmentDetail = {
   name_cn: string;
   name_en: string;
   category: string;
-  images: string;       // JSON 字符串
+  images: string;
   desc_cn: string;
   desc_en: string;
-  features_cn: string;  // JSON 字符串
-  features_en: string;  // JSON 字符串
-  specs: string;        // JSON 字符串
-  model_tables: string; // JSON 字符串
-  intro: string;        // JSON 字符串（产品介绍段落块）
+  features_cn: string;
+  features_en: string;
+  specs: string;
+  model_tables: string;
+  intro: string;
   seo_title_cn: string;
   seo_title_en: string;
   seo_desc_cn: string;
@@ -206,9 +222,14 @@ export type AdminEquipmentDetail = {
 };
 
 export async function getAdminEquipment(slug: string): Promise<AdminEquipmentDetail | null> {
-  const res = await authFetch(`/api/admin/equipments/${encodeURIComponent(slug)}`);
-  if (res.status === 404) return null;
-  return (await res.json()) as AdminEquipmentDetail;
+  try {
+    const res = await authFetch(`/api/admin/equipments/${encodeURIComponent(slug)}`);
+    return (await res.json()) as AdminEquipmentDetail;
+  } catch (e) {
+    const err = e as Error & { status?: number };
+    if (err.status === 404) return null;
+    throw e;
+  }
 }
 
 /* 设备：创建 / 更新（API 期望扁平结构） */
@@ -231,7 +252,6 @@ export type EquipmentInput = {
   seo_desc_zh: string;
   seo_desc_en: string;
   seo_keywords: string;
-  /** 排序值：仅 update 生效（后端 PUT 支持），create 时后端忽略（列有默认值 0） */
   sort?: number;
 };
 
@@ -267,7 +287,7 @@ export async function importEquipments(items: EquipmentInput[]): Promise<{ ok: b
   return res.json();
 }
 
-/* 询盘：管理列表（只读） */
+/* 询盘：管理列表 */
 export type Inquiry = {
   id: number;
   equipment: string;
@@ -291,8 +311,8 @@ export async function listInquiries(filter: InquiryFilter = {}): Promise<Inquiry
   if (filter.q) params.set('q', filter.q);
   const qs = params.toString();
   const res = await authFetch(`/api/admin/inquiries${qs ? `?${qs}` : ''}`);
-  const data = (await res.json()) as { items: Inquiry[] };
-  return data.items ?? [];
+  const data = (await res.json().catch(() => ({}))) as { items?: Inquiry[] };
+  return Array.isArray(data.items) ? data.items : [];
 }
 
 export async function replyInquiry(id: number, replied = true): Promise<{ ok: boolean }> {
@@ -309,7 +329,8 @@ export type SiteSettings = Record<string, string>;
 export async function getSiteSettings(): Promise<SiteSettings> {
   const res = await fetch('/api/site/settings');
   if (!res.ok) throw new Error(`API ${res.status}`);
-  return (await res.json()) as SiteSettings;
+  const data = await res.json().catch(() => ({}));
+  return (data && typeof data === 'object') ? data as SiteSettings : {};
 }
 
 export async function updateSiteSettings(settings: SiteSettings) {
@@ -324,13 +345,8 @@ export async function updateSiteSettings(settings: SiteSettings) {
 /* 边缘预渲染：读取 Worker 注入到 HTML 里的设备数据（首屏免请求）        */
 /* ------------------------------------------------------------------ */
 
-/** 与 apps/api/src/prerender.ts 的 SSR_DATA_ID 保持一致 */
 export const SSR_DATA_ID = 'ssr-equipment';
 
-/**
- * 读取服务端注入的设备数据。
- * 只有「存在且 slug 匹配」时才返回 —— 客户端跳转到别的设备后不能误用旧数据。
- */
 export function readSsrEquipment(slug: string): Equipment | null {
   if (typeof document === 'undefined' || !slug) return null;
   const el = document.getElementById(SSR_DATA_ID);
@@ -347,11 +363,11 @@ export function readSsrEquipment(slug: string): Equipment | null {
 /* Google Ads：后台维护、前台注入的公开配置 */
 export type AdsConfig = {
   enabled: boolean;
-  id: string;                 // 完整 gtag ID（AW-xxx / G-xxx / GTM-xxx）
-  conversion_id: string;      // 仅 AW- 开头（Google Ads 转化用）
-  conversion_label: string;   // 转化标签
-  head_code: string;          // 自定义 head JS（管理员维护）
-  body_code: string;          // 自定义 body HTML（通常是 noscript）
+  id: string;
+  conversion_id: string;
+  conversion_label: string;
+  head_code: string;
+  body_code: string;
 };
 
 export async function getAdsConfig(): Promise<AdsConfig> {
@@ -367,7 +383,6 @@ export async function getAdsConfig(): Promise<AdsConfig> {
 export type MailSource = 'db' | 'env' | 'none';
 
 export type MailConfigView = {
-  /** 后台编辑面板用的原始值（api_key 以 has_key / key_tail 体现） */
   stored: {
     enabled: string;
     from: string;
@@ -378,7 +393,6 @@ export type MailConfigView = {
     has_key: boolean;
     key_tail: string;
   };
-  /** 含环境变量回退的生效值（API 不可编辑，发信时实际用的就是这份） */
   effective: {
     enabled: boolean;
     from: string;
@@ -400,7 +414,6 @@ export async function getMailConfig(): Promise<MailConfigView> {
   return (await res.json()) as MailConfigView;
 }
 
-/** 更新邮件配置。空串 = 清空该字段回退到环境变量；缺省字段保持不变。 */
 export async function updateMailConfig(p: {
   enabled?: '' | '1' | '0' | 'true' | 'false';
   from?: string;
@@ -417,7 +430,6 @@ export async function updateMailConfig(p: {
   return (await res.json()) as MailConfigView;
 }
 
-/** 发送一封测试邮件，可指定收件人（留空就用配置里的默认收件人） */
 export async function sendTestMail(to?: string): Promise<{
   ok: boolean;
   status: 'sent' | 'failed' | 'skipped';
