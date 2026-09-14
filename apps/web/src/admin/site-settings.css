@@ -1,0 +1,118 @@
+.site-settings-page { min-width: 0; }
+
+.settings-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid var(--b2b-line);
+  border-radius: 10px;
+  background: var(--b2b-panel);
+  box-shadow: var(--b2b-shadow);
+  scrollbar-width: thin;
+}
+
+.settings-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--b2b-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settings-tab:hover {
+  color: var(--b2b-text-2);
+  background: var(--b2b-panel-2);
+}
+
+.settings-tab.is-active {
+  color: var(--b2b-blue);
+  background: var(--b2b-blue-soft);
+  border-color: rgba(37,99,235,.14);
+}
+
+.settings-tab em {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--b2b-panel-2);
+  color: var(--b2b-muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1;
+}
+
+.settings-tab.is-active em {
+  color: var(--b2b-blue);
+  background: var(--b2b-panel);
+}
+
+.settings-panel {
+  min-width: 0;
+}
+
+.settings-panel .ss-group-hint {
+  margin: -2px 0 12px;
+}
+
+.settings-missing-actions {
+  position: static;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 0;
+  background: transparent;
+}
+
+.settings-add-actions {
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+/* Settings page keeps the left navigation visible while the main content scrolls. */
+@media (min-width: 761px) {
+  .admin-nav {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    align-self: flex-start !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .settings-tabs {
+    margin-bottom: 12px;
+  }
+
+  .settings-tab {
+    min-height: 34px;
+    padding: 6px 11px;
+  }
+
+  .settings-add-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-add-actions .admin-input,
+  .settings-add-actions .admin-btn {
+    max-width: none !important;
+    width: 100%;
+  }
+}
