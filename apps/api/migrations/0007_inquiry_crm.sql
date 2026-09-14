@@ -7,6 +7,7 @@ ALTER TABLE inquiries ADD COLUMN page_url TEXT NOT NULL DEFAULT '';
 ALTER TABLE inquiries ADD COLUMN notes TEXT NOT NULL DEFAULT '';
 ALTER TABLE inquiries ADD COLUMN follow_up_at TEXT NOT NULL DEFAULT '';
 ALTER TABLE inquiries ADD COLUMN last_contact_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE inquiries ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS idx_inquiries_lead_status ON inquiries(lead_status);
 CREATE INDEX IF NOT EXISTS idx_inquiries_priority ON inquiries(priority);
