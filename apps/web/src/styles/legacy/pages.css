@@ -23,6 +23,26 @@
 .support-detail-actions{display:flex;flex-wrap:wrap;gap:12px}
 .support-detail-actions .outline{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 
+/* 服务支持中心入口卡 */
+.support-topic-main{min-width:0;flex:1}
+.support-topic-link{display:inline-flex;align-items:center;gap:8px;margin-top:16px;color:#ad6806;font-size:13px;font-weight:800}
+.support-topic-link span:last-child{font-size:18px;line-height:1;transition:transform 160ms var(--ease-out)}
+.support-topic-link:hover span:last-child{transform:translateX(4px)}
+.support-topic:hover{border-color:#e4b454;box-shadow:0 10px 24px rgba(12,23,32,.07)}
+
+/* 法律页面 */
+.legal-hero .shell{padding-top:20px;padding-bottom:48px}
+.legal-body{padding-top:58px;padding-bottom:78px}
+.legal-content{max-width:900px}
+.legal-section{background:#fff;border:1px solid var(--line);padding:24px 28px;margin-bottom:14px}
+.legal-section h2{margin:0 0 10px;color:var(--ink);font-size:19px;line-height:1.4}
+.legal-section p{margin:0;color:var(--muted);font-size:14px;line-height:1.9}
+.legal-contact{display:flex;align-items:center;gap:14px;margin-top:24px;padding:18px 20px;background:#f8fafb;border:1px solid var(--line);font-size:14px}
+.legal-contact a{color:#ad6806;font-weight:700}
+.legal-backlinks{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px}
+.legal-backlinks a{color:#12314a;font-size:13px;font-weight:700}
+.legal-backlinks a:hover,.footer-legal-links a:hover{color:#ad6806}
+
 /* 行业方案详情卡片 */
 .sol-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 .sol-card{background:#fff;border:1px solid var(--line);padding:34px 32px;transition:box-shadow 220ms var(--ease-out),transform 220ms var(--ease-out)}
@@ -102,4 +122,11 @@ html[lang="en"] .step h4{font-size:14px}
   .step:last-child{border:0}
   .contact-box{grid-template-columns:1fr}
   .metrics-grid{grid-template-columns:1fr 1fr}
+  .support-topic-link{margin-top:14px}
+  .legal-hero .shell{padding-top:16px;padding-bottom:34px}
+  .legal-body{padding-top:42px;padding-bottom:58px}
+  .legal-section{padding:20px 18px}
+  .legal-section h2{font-size:18px}
+  .legal-section p{font-size:13px;line-height:1.85}
+  .legal-contact{align-items:flex-start;flex-direction:column;gap:6px}
 }
