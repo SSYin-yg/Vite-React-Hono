@@ -7,7 +7,11 @@ const HERO_BG = `linear-gradient(118deg,rgba(12,27,34,.90),rgba(29,51,58,.86)),u
 const SIDE_BG = `linear-gradient(0deg,rgba(12,25,31,.32),rgba(12,25,31,.12)),url('${HERO_IMAGES.side}')`;
 
 export default function About() {
-  const { t, base, openQuote } = useSite();
+  const { t, base, openQuote, settings } = useSite();
+  const phone = String(settings.contact_phone ?? '').trim();
+  const email = String(settings.contact_email ?? '').trim();
+  const address = String(settings.contact_address ?? '').trim();
+  const phoneHref = phone.replace(/[^\d+]/g, '');
 
   useEffect(() => {
     document.title = base ? 'About Us | Minelink Equipment' : '关于我们 | 矿联矿机';
@@ -78,18 +82,24 @@ export default function About() {
             </div>
           </div>
           <div className="contact-box">
-            <div className="cb-item">
-              <div className="cb-label">{t('about.phone')}</div>
-              <div className="cb-val">400-800-6628</div>
-            </div>
-            <div className="cb-item">
-              <div className="cb-label">{t('about.email')}</div>
-              <div className="cb-val"><a href="mailto:sales@minelink.cn">sales@minelink.cn</a></div>
-            </div>
-            <div className="cb-item">
-              <div className="cb-label">{t('about.location')}</div>
-              <div className="cb-val">{t('footer.location')}</div>
-            </div>
+            {phone && (
+              <div className="cb-item">
+                <div className="cb-label">{t('about.phone')}</div>
+                <div className="cb-val"><a href={`tel:${phoneHref}`}>{phone}</a></div>
+              </div>
+            )}
+            {email && (
+              <div className="cb-item">
+                <div className="cb-label">{t('about.email')}</div>
+                <div className="cb-val"><a href={`mailto:${email}`}>{email}</a></div>
+              </div>
+            )}
+            {address && (
+              <div className="cb-item">
+                <div className="cb-label">{t('about.location')}</div>
+                <div className="cb-val">{address}</div>
+              </div>
+            )}
             <div className="cb-item">
               <div className="cb-label">{t('about.response')}</div>
               <div className="cb-val">{t('about.response.val')}</div>
