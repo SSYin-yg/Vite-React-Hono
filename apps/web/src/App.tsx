@@ -9,6 +9,7 @@ import Catalog from './pages/Catalog';
 import EquipmentDetail from './pages/EquipmentDetail';
 import Solutions from './pages/Solutions';
 import Support from './pages/Support';
+import SupportDetail from './pages/SupportDetail';
 import About from './pages/About';
 import Faq from './pages/Faq';
 import AdminApp from './admin/AdminApp';
@@ -30,6 +31,7 @@ function Shell({ lang }: { lang: Lang }) {
         <Route path="equipment/:slug" element={<EquipmentDetail />} />
         <Route path="solutions" element={<Solutions />} />
         <Route path="support" element={<Support />} />
+        <Route path="support/:topic" element={<SupportDetail />} />
         <Route path="faq" element={<Faq />} />
         <Route path="about" element={<About />} />
         <Route path="*" element={<NotFound />} />
