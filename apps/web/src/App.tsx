@@ -10,6 +10,8 @@ import EquipmentDetail from './pages/EquipmentDetail';
 import Solutions from './pages/Solutions';
 import Support from './pages/Support';
 import SupportDetail from './pages/SupportDetail';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import About from './pages/About';
 import Faq from './pages/Faq';
 import AdminApp from './admin/AdminApp';
@@ -34,6 +36,8 @@ function Shell({ lang }: { lang: Lang }) {
         <Route path="support/:topic" element={<SupportDetail />} />
         <Route path="faq" element={<Faq />} />
         <Route path="about" element={<About />} />
+        <Route path="privacy" element={<Privacy />} />
+        <Route path="terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <SiteFooter />
