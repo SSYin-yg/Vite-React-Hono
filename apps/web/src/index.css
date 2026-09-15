@@ -1,18 +1,59 @@
 /* 仅保留 React 版特有组件的补充样式（全局视觉来自旧站 common/home/catalog/pages/faq/product.css） */
 
 /* 设备详情页（React 版） */
-.detail { padding: 28px 0 60px; }
-.detail-head { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
-.detail-gallery { flex: 1 1 380px; display: flex; gap: 10px; flex-wrap: wrap; }
-.detail-gallery img {
-  width: 100%; max-width: 460px; border-radius: 10px; border: 1px solid #e3e8e7; display: block;
+.detail { padding: 42px 0 72px; }
+.detail-head {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(420px, 1.05fr);
+  gap: 48px;
+  align-items: start;
 }
-.detail-info { flex: 1 1 320px; }
-.detail-info .crumbs { color: #849096; font-size: 13px; margin-bottom: 8px; }
+.detail-gallery {
+  min-width: 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.detail-gallery img {
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid #e3e8e7;
+  display: block;
+}
+.detail-info {
+  min-width: 0;
+  padding-top: 4px;
+}
+.detail-info .crumbs {
+  color: #849096;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
 .detail-info .crumbs a { color: inherit; }
 .detail-info .lang-jump { margin-left: 12px; }
-.detail-info h1 { margin: 0 0 10px; }
-.detail-info .desc { white-space: pre-line; color: #4a555c; line-height: 1.8; }
+.detail-info h1 {
+  margin: 0 0 18px;
+  max-width: 680px;
+  font-size: 42px;
+  line-height: 1.18;
+  letter-spacing: -0.8px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.detail-info .desc {
+  white-space: pre-line;
+  color: #4a555c;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.detail-info ul {
+  font-size: 14px;
+  line-height: 1.8;
+}
 .detail-section { margin-top: 36px; }
 .detail-section h2 {
   font-size: 20px; margin: 0 0 14px; padding-left: 12px;
@@ -80,7 +121,44 @@
   overflow-wrap: anywhere;
 }
 
+@media (max-width: 1199px) {
+  .detail-head { gap: 32px; }
+  .detail-info h1 { font-size: 38px; }
+  html[lang="en"] .detail-info h1 { font-size: 36px; }
+}
+
+@media (max-width: 1000px) {
+  .detail-head {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .detail-info h1 { font-size: 34px; }
+  html[lang="en"] .detail-info h1 { font-size: 32px; }
+}
+
 @media (max-width: 768px) {
+  .detail {
+    padding: 28px 0 56px;
+  }
+
+  .detail-head {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .detail-gallery img {
+    max-height: 420px;
+  }
+
+  .detail-info h1,
+  html[lang="en"] .detail-info h1 {
+    max-width: none;
+    font-size: 30px;
+    line-height: 1.24;
+    letter-spacing: -0.3px;
+    margin-bottom: 12px;
+  }
+
   .table-scroll {
     border-left: 1px solid #e3e8e7;
     border-right: 1px solid #e3e8e7;
@@ -99,6 +177,12 @@
 }
 
 @media (max-width: 420px) {
+  .detail-info h1,
+  html[lang="en"] .detail-info h1 {
+    font-size: 26px;
+    line-height: 1.28;
+  }
+
   .spec-table th,
   .spec-table td {
     padding: 9px 10px;
