@@ -1,5 +1,107 @@
 .site-settings-page { min-width: 0; }
 
+/* Current SiteSettings component uses the ss-* hooks. Keep these scoped so legacy admin styles do not leak into them. */
+.ss-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid var(--b2b-line);
+  border-radius: 10px;
+  background: var(--b2b-panel);
+  box-shadow: var(--b2b-shadow);
+  scrollbar-width: thin;
+}
+
+.ss-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--b2b-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ss-tab:hover {
+  color: var(--b2b-text-2);
+  background: var(--b2b-panel-2);
+}
+
+.ss-tab.is-active {
+  color: var(--b2b-blue);
+  background: var(--b2b-blue-soft);
+  border-color: rgba(37,99,235,.14);
+}
+
+.ss-tab-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--b2b-panel-2);
+  color: var(--b2b-muted);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ss-tab.is-active .ss-tab-count {
+  color: var(--b2b-blue);
+  background: var(--b2b-panel);
+}
+
+.ss-panel {
+  min-width: 0;
+}
+
+.ss-panel-head p {
+  margin: 4px 0 12px;
+  color: var(--b2b-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.ss-label {
+  color: var(--b2b-text-2);
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+.ss-help {
+  margin-top: 5px;
+  color: var(--b2b-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.ss-add-missing,
+.ss-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ss-add-missing {
+  margin-top: 12px;
+}
+
+.ss-add-row {
+  justify-content: flex-start;
+}
+
+/* The legacy class names are kept as aliases for existing builds/components. */
 .settings-tabs {
   display: flex;
   gap: 6px;
@@ -83,7 +185,6 @@
   margin-top: 14px;
 }
 
-/* Settings page keeps the left navigation visible while the main content scrolls. */
 @media (min-width: 761px) {
   .admin-nav {
     position: sticky !important;
@@ -96,23 +197,32 @@
 }
 
 @media (max-width: 760px) {
+  .ss-tabs,
   .settings-tabs {
     margin-bottom: 12px;
   }
 
+  .ss-tab,
   .settings-tab {
     min-height: 34px;
     padding: 6px 11px;
   }
 
+  .ss-add-row,
   .settings-add-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .ss-add-row .admin-input,
+  .ss-add-row .admin-btn,
   .settings-add-actions .admin-input,
   .settings-add-actions .admin-btn {
     max-width: none !important;
     width: 100%;
+  }
+
+  .ss-add-missing {
+    align-items: stretch;
   }
 }
