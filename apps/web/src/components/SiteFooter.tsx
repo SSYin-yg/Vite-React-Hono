@@ -54,7 +54,11 @@ export default function SiteFooter() {
         </div>
         <div className="copyright">
           <span>© {new Date().getFullYear()} {brandEn}. All rights reserved.</span>
-          <span><span>{t('footer.privacy')}</span>　|　<span>{t('footer.terms')}</span></span>
+          <span className="footer-legal-links">
+            <Link to={`${base}/privacy`}>{t('footer.privacy')}</Link>
+            <span aria-hidden="true">|</span>
+            <Link to={`${base}/terms`}>{t('footer.terms')}</Link>
+          </span>
         </div>
       </div>
     </footer>
