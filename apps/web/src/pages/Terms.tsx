@@ -27,7 +27,7 @@ const CONTENT_EN = [
 export default function Terms() {
   const { base, lang, t, settings } = useSite();
   const sections = lang === 'en' ? CONTENT_EN : CONTENT_ZH;
-  const email = settings.contact_email || 'sales@minelink.cn';
+  const email = String(settings.contact_email ?? '').trim();
 
   useEffect(() => {
     document.title = lang === 'en' ? 'Terms of Use | Minelink Equipment' : '使用条款 | 矿联矿机';
@@ -54,10 +54,12 @@ export default function Terms() {
               <p>{body}</p>
             </article>
           ))}
-          <div className="legal-contact">
-            <strong>{lang === 'en' ? 'Contact' : '联系方式'}</strong>
-            <a href={`mailto:${email}`}>{email}</a>
-          </div>
+          {email && (
+            <div className="legal-contact">
+              <strong>{lang === 'en' ? 'Contact' : '联系方式'}</strong>
+              <a href={`mailto:${email}`}>{email}</a>
+            </div>
+          )}
           <div className="legal-backlinks">
             <Link to={`${base}/support`}>{lang === 'en' ? 'Service & Support' : '服务支持'}</Link>
             <Link to={`${base}/privacy`}>{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</Link>
