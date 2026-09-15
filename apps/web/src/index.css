@@ -22,9 +22,9 @@
 
 .spec-table { border-collapse: collapse; width: 100%; margin: 0; }
 .spec-table th, .spec-table td {
-  border: 1px solid #e3e8e7; padding: 9px 14px; text-align: left; font-size: 14px;
+  border: 1px solid #e3e8e7; padding: 9px 14px; text-align: center; font-size: 14px; vertical-align: middle;
 }
-.spec-table th { background: #f6f8fb; width: 38%; }
+.spec-table th { background: #f6f8fb; width: 38%; font-weight: 700; }
 .table-scroll { overflow-x: auto; }
 
 /* h 标签导航（详情页目录）：由页面 h2/h3 生成 */
