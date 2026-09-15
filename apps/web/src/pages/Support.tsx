@@ -15,14 +15,14 @@ const STEPS = [
 ] as const;
 
 const SUPPORT_ITEMS = [
-  ['A', 'footer.select', 'support.item.select'],
-  ['B', 'footer.inspect', 'support.item.inspect'],
-  ['C', 'footer.aftersale', 'support.item.aftersale'],
-  ['D', 'footer.spare', 'support.item.spare'],
+  ['A', 'footer.select', 'support.item.select', 'equipment-selection'],
+  ['B', 'footer.inspect', 'support.item.inspect', 'inspection-delivery'],
+  ['C', 'footer.aftersale', 'support.item.aftersale', 'after-sales'],
+  ['D', 'footer.spare', 'support.item.spare', 'spare-parts'],
 ] as const;
 
 export default function Support() {
-  const { t, base, openQuote } = useSite();
+  const { t, base, openQuote, lang } = useSite();
 
   useEffect(() => {
     document.title = base ? 'Service & Support | Minelink Equipment' : '服务支持 | 矿联矿机';
@@ -90,15 +90,19 @@ export default function Support() {
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="shell">
-          <div className="support-list">
-            {SUPPORT_ITEMS.map(([icon, title, copy]) => (
-              <div className="support-item" key={icon}>
+          <div className="support-list support-topic-list">
+            {SUPPORT_ITEMS.map(([icon, title, copy, topic]) => (
+              <article className="support-item support-topic" key={topic}>
                 <div className="si-icon">{icon}</div>
-                <div>
+                <div className="support-topic-main">
                   <h3>{t(title)}</h3>
                   <p>{t(copy)}</p>
+                  <Link className="support-topic-link" to={`${base}/support/${topic}`}>
+                    <span>{lang === 'en' ? 'View service details' : '查看服务详情'}</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>
