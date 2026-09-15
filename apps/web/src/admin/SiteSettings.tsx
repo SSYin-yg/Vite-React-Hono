@@ -4,34 +4,9 @@ import { getSiteSettings, updateSiteSettings } from '../api';
 import { Loader, ErrorBox, Empty, TableWrap, useToast } from './ui';
 import './site-settings.css';
 
-const GROUP_BASIC = [
-  'site_name_zh',
-  'site_name_en',
-  'site_description_zh',
-  'site_description_en',
-];
-
-const GROUP_CONTACT = [
-  'contact_phone',
-  'contact_email',
-  'contact_address',
-  'contact_whatsapp',
-  'contact_telegram',
-  'contact_widget_enabled',
-  'contact_whatsapp_enabled',
-  'contact_telegram_enabled',
-  'contact_email_enabled',
-  'contact_channels_order',
-];
-
-const GROUP_ADS = [
-  'google_ads_enabled',
-  'google_ads_id',
-  'google_ads_conversion_label',
-  'google_ads_head_code',
-  'google_ads_body_code',
-];
-
+const GROUP_BASIC = ['site_name_zh', 'site_name_en', 'site_description_zh', 'site_description_en'];
+const GROUP_CONTACT = ['contact_phone', 'contact_email', 'contact_address', 'contact_whatsapp', 'contact_telegram', 'contact_widget_enabled', 'contact_whatsapp_enabled', 'contact_telegram_enabled', 'contact_email_enabled', 'contact_channels_order'];
+const GROUP_ADS = ['google_ads_enabled', 'google_ads_id', 'google_ads_conversion_label', 'google_ads_head_code', 'google_ads_body_code'];
 const GROUP_SEO = ['gsc_verification'];
 const KNOWN = [...GROUP_BASIC, ...GROUP_CONTACT, ...GROUP_ADS, ...GROUP_SEO];
 type TabKey = 'basic' | 'contact' | 'ads' | 'seo' | 'rest';
@@ -63,71 +38,42 @@ const CONTACT_LABELS: Record<string, { zh: string; en: string; hintZh?: string; 
   contact_channels_order: { zh: '客服渠道顺序', en: 'Channel order', hintZh: '用英文逗号分隔，例如 whatsapp,telegram,email。未写入的有效渠道会自动追加。', hintEn: 'Comma-separated order such as whatsapp,telegram,email. Valid omitted channels are appended automatically.' },
 };
 
-function isEnabledKey(key: string) {
-  return /_enabled$/.test(key) || key === 'contact_widget_enabled';
-}
-
-function contactTabLabel(t: (k: string) => string) {
-  const en = t('settings.k.contact_phone');
-  return en === 'settings.k.contact_phone' || en === '联系电话' ? '联系方式' : 'Contact';
-}
-
+function isEnglish(t: (k: string) => string) { return t('nav.settings') === 'Site Settings'; }
+function isEnabledKey(key: string) { return /_enabled$/.test(key); }
 function getLabel(key: string, t: (k: string) => string) {
   const item = CONTACT_LABELS[key];
-  if (item) return t('settings.k.contact_phone') === 'Phone' ? item.en : item.zh;
+  if (item) return isEnglish(t) ? item.en : item.zh;
   const label = t('settings.k.' + key);
   return label !== 'settings.k.' + key ? label : key;
 }
-
 function getHint(key: string, t: (k: string) => string) {
   const item = CONTACT_LABELS[key];
   if (!item) return '';
-  return t('settings.k.contact_phone') === 'Phone' ? item.hintEn || '' : item.hintZh || '';
+  return isEnglish(t) ? (item.hintEn || '') : (item.hintZh || '');
 }
 
-function SettingsTable({
-  rows,
-  t,
-  onEdit,
-  onSave,
-  onDelete,
-}: {
-  rows: Row[];
-  t: (k: string) => string;
-  onEdit: (key: string, val: string) => void;
-  onSave: () => void;
-  onDelete: (key: string) => void;
-}) {
+function SettingsTable({ rows, t, onEdit, onSave, onDelete }: { rows: Row[]; t: (k: string) => string; onEdit: (key: string, val: string) => void; onSave: () => void; onDelete: (key: string) => void; }) {
   return (
     <TableWrap>
       <table className="admin-table">
-        <thead>
-          <tr>
-            <th style={{ width: '26%' }}>{t('settings.key')}</th>
-            <th>{t('settings.value')}</th>
-            <th style={{ width: 170 }}></th>
-          </tr>
-        </thead>
+        <thead><tr><th style={{ width: '26%' }}>{t('settings.key')}</th><th>{t('settings.value')}</th><th style={{ width: 170 }} /></tr></thead>
         <tbody>
           {rows.map((it) => {
-            const legacyLabel = t('settings.k.' + it.key);
-            const multiline = /_code$/.test(it.key);
-            const toggle = isEnabledKey(it.key);
             const label = getLabel(it.key, t);
             const hint = getHint(it.key, t);
+            const multiline = /_code$/.test(it.key);
+            const toggle = isEnabledKey(it.key);
             return (
               <tr key={it.key}>
                 <td>
                   <div className="ss-label">{label}</div>
-                  {legacyLabel !== 'settings.k.' + it.key && !CONTACT_LABELS[it.key] && <code>{it.key}</code>}
-                  {CONTACT_LABELS[it.key] && <code>{it.key}</code>}
+                  <code>{it.key}</code>
                   {hint && <div className="ss-help">{hint}</div>}
                 </td>
                 <td>
                   {toggle ? (
                     <select className="admin-input" value={it.value === '0' ? '0' : '1'} onChange={(e) => onEdit(it.key, e.target.value)}>
-                      <option value="1">1</option>
-                      <option value="0">0</option>
+                      <option value="1">1</option><option value="0">0</option>
                     </select>
                   ) : multiline ? (
                     <textarea className="admin-input" rows={4} value={it.value} onChange={(e) => onEdit(it.key, e.target.value)} />
@@ -161,34 +107,19 @@ export default function SiteSettings() {
 
   const load = async () => {
     setLoading(true);
-    try {
-      const data = await getSiteSettings();
-      setItems(Object.entries(data ?? {}).map(([key, value]) => ({ key, value: String(value) })));
-      setErr(null);
-    } catch (e) {
-      setErr(String(e));
-    } finally {
-      setLoading(false);
-    }
+    try { const data = await getSiteSettings(); setItems(Object.entries(data ?? {}).map(([key, value]) => ({ key, value: String(value) }))); setErr(null); }
+    catch (e) { setErr(String(e)); }
+    finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
   const save = async (next: Row[]) => {
-    try {
-      await updateSiteSettings(Object.fromEntries(next.map((i) => [i.key, i.value])));
-      await load();
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      toast.err(String(e));
-    }
+    try { await updateSiteSettings(Object.fromEntries(next.map((i) => [i.key, i.value]))); await load(); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    catch (e) { toast.err(String(e)); }
   };
 
   const groups = useMemo(() => {
-    const pick = (keys: string[]) => {
-      const rank = (k: string) => { const i = keys.indexOf(k); return i === -1 ? keys.length : i; };
-      return items.filter((i) => keys.includes(i.key)).sort((a, b) => rank(a.key) - rank(b.key));
-    };
+    const pick = (keys: string[]) => { const rank = (k: string) => { const i = keys.indexOf(k); return i === -1 ? keys.length : i; }; return items.filter((i) => keys.includes(i.key)).sort((a, b) => rank(a.key) - rank(b.key)); };
     const rest = items.filter((i) => !KNOWN.includes(i.key)).sort((a, b) => a.key.localeCompare(b.key));
     return { basic: pick(GROUP_BASIC), contact: pick(GROUP_CONTACT), ads: pick(GROUP_ADS), seo: pick(GROUP_SEO), rest };
   }, [items]);
@@ -198,9 +129,10 @@ export default function SiteSettings() {
   const missingContact = useMemo(() => GROUP_CONTACT.filter((k) => !items.some((i) => i.key === k)), [items]);
 
   const tabs = useMemo(() => {
+    const contactLabel = isEnglish(t) ? 'Contact' : '联系方式';
     const next: Array<{ key: TabKey; label: string; rows: Row[] }> = [
       { key: 'basic', label: t('settings.group_basic'), rows: groups.basic },
-      { key: 'contact', label: contactTabLabel(t), rows: groups.contact },
+      { key: 'contact', label: contactLabel, rows: groups.contact },
       { key: 'ads', label: t('settings.group_ads'), rows: groups.ads },
       { key: 'seo', label: t('settings.group_seo'), rows: groups.seo },
     ];
@@ -208,43 +140,22 @@ export default function SiteSettings() {
     return next;
   }, [groups, t]);
 
-  useEffect(() => {
-    if (!tabs.some((tab) => tab.key === activeTab)) setActiveTab(tabs[0]?.key ?? 'basic');
-  }, [tabs, activeTab]);
-
+  useEffect(() => { if (!tabs.some((tab) => tab.key === activeTab)) setActiveTab(tabs[0]?.key ?? 'basic'); }, [tabs, activeTab]);
   const active = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
 
   const onAdd = () => {
-    const key = newKey.trim();
-    if (!key) return;
-    if (items.some((i) => i.key === key)) {
-      toast.err('该配置键已存在 / This setting key already exists.');
-      return;
-    }
+    const key = newKey.trim(); if (!key) return;
+    if (items.some((i) => i.key === key)) { toast.err('该配置键已存在 / This setting key already exists.'); return; }
     save([...items, { key, value: newVal }]).then(() => { setNewKey(''); setNewVal(''); });
   };
-
-  const onAddKey = (key: string) => {
-    if (items.some((i) => i.key === key)) return;
-    save([...items, { key, value: key in CONTACT_DEFAULTS ? CONTACT_DEFAULTS[key] : '' }]);
-  };
-
+  const onAddKey = (key: string) => { if (!items.some((i) => i.key === key)) save([...items, { key, value: CONTACT_DEFAULTS[key] ?? '' }]); };
   const onInitContact = () => {
     const next = [...items];
-    for (const key of GROUP_CONTACT) {
-      if (!next.some((i) => i.key === key)) next.push({ key, value: CONTACT_DEFAULTS[key] ?? '' });
-    }
+    for (const key of GROUP_CONTACT) if (!next.some((i) => i.key === key)) next.push({ key, value: CONTACT_DEFAULTS[key] ?? '' });
     save(next);
   };
-
   const onEdit = (key: string, val: string) => setItems((prev) => prev.map((i) => (i.key === key ? { ...i, value: val } : i)));
-  const onSaveRow = () => save(items);
-
-  const onDelete = (key: string) => {
-    if (!window.confirm(t('settings.confirm_delete'))) return;
-    save(items.filter((i) => i.key !== key));
-  };
-
+  const onDelete = (key: string) => { if (!window.confirm(t('settings.confirm_delete'))) return; save(items.filter((i) => i.key !== key)); };
   const emptyState = !loading && items.length === 0 && !err;
 
   return (
@@ -256,67 +167,29 @@ export default function SiteSettings() {
           <button className="admin-btn" onClick={load} disabled={loading}>{loading ? '…' : t('inquiry.refresh')}</button>
         </div>
       </div>
-
       <p className="admin-hint">{t('settings.hint')}</p>
-
       {err && <ErrorBox>{err}</ErrorBox>}
-
-      {loading && items.length === 0 ? (
-        <Loader label={t('common.loading')} />
-      ) : emptyState ? (
-        <Empty text={t('settings.empty')} />
-      ) : (
+      {loading && items.length === 0 ? <Loader label={t('common.loading')} /> : emptyState ? <Empty text={t('settings.empty')} /> : (
         <>
           <div className="ss-tabs" role="tablist" aria-label={t('nav.settings')}>
-            {tabs.map((tab) => (
-              <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} className={`ss-tab${activeTab === tab.key ? ' is-active' : ''}`} onClick={() => setActiveTab(tab.key)}>
-                {tab.label}<span className="ss-tab-count">{tab.rows.length}</span>
-              </button>
-            ))}
+            {tabs.map((tab) => <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} className={`ss-tab${activeTab === tab.key ? ' is-active' : ''}`} onClick={() => setActiveTab(tab.key)}>{tab.label}<span className="ss-tab-count">{tab.rows.length}</span></button>)}
           </div>
-
           {active && (
             <div className="ss-panel" role="tabpanel">
-              <div className="ss-panel-head">
-                <div>
-                  <h3>{active.label}</h3>
-                  {active.key === 'basic' && <p>{t('settings.hint')}</p>}
-                  {active.key === 'contact' && (
-                    <p>这些配置统一控制前台 Footer、关于我们、隐私政策、使用条款以及右下角悬浮客服。网站公开联系邮箱与 Mail Notifications 的 From 发件地址保持独立。</p>
-                  )}
-                  {active.key === 'ads' && <p>{t('settings.ads_hint')}</p>}
-                  {active.key === 'seo' && <p>{t('settings.gsc_hint')}</p>}
-                </div>
-              </div>
-
-              <SettingsTable rows={active.rows} t={t} onEdit={onEdit} onSave={onSaveRow} onDelete={onDelete} />
-
-              {active.key === 'contact' && missingContact.length > 0 && (
-                <div className="admin-form-actions ss-add-missing">
-                  <span className="admin-muted">初始化缺失的联系方式配置：</span>
-                  <button className="admin-btn admin-btn-primary" onClick={onInitContact}>初始化全部联系方式</button>
-                  {missingContact.map((k) => <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>)}
-                </div>
-              )}
-
-              {active.key === 'ads' && missingAds.length > 0 && (
-                <div className="admin-form-actions ss-add-missing">
-                  <span className="admin-muted">{t('settings.add')}：</span>
-                  {missingAds.map((k) => <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>)}
-                </div>
-              )}
-
-              {active.key === 'seo' && missingSeo.length > 0 && (
-                <div className="admin-form-actions ss-add-missing">
-                  <span className="admin-muted">{t('settings.add')}：</span>
-                  {missingSeo.map((k) => <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>)}
-                </div>
-              )}
+              <div className="ss-panel-head"><div><h3>{active.label}</h3>
+                {active.key === 'basic' && <p>{isEnglish(t) ? 'Brand and default site information.' : '管理品牌名称及默认站点信息。'}</p>}
+                {active.key === 'contact' && <p>{isEnglish(t) ? 'These settings control public phone, email, address and the floating contact widget. The public contact email is separate from Mail Notifications → From.' : '这些配置统一控制前台电话、邮箱、地址以及右下角悬浮客服。公开联系邮箱与“邮件通知 → 发件人 From”保持独立。'}</p>}
+                {active.key === 'ads' && <p>{t('settings.ads_hint')}</p>}
+                {active.key === 'seo' && <p>{t('settings.gsc_hint')}</p>}
+              </div></div>
+              <SettingsTable rows={active.rows} t={t} onEdit={onEdit} onSave={() => save(items)} onDelete={onDelete} />
+              {active.key === 'contact' && missingContact.length > 0 && <div className="admin-form-actions ss-add-missing"><span className="admin-muted">{isEnglish(t) ? 'Initialize missing contact settings:' : '初始化缺失的联系方式配置：'}</span><button className="admin-btn admin-btn-primary" onClick={onInitContact}>{isEnglish(t) ? 'Initialize all contact settings' : '初始化全部联系方式'}</button></div>}
+              {active.key === 'ads' && missingAds.length > 0 && <div className="admin-form-actions ss-add-missing"><span className="admin-muted">{t('settings.add')}：</span>{missingAds.map((k) => <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>)}</div>}
+              {active.key === 'seo' && missingSeo.length > 0 && <div className="admin-form-actions ss-add-missing"><span className="admin-muted">{t('settings.add')}：</span>{missingSeo.map((k) => <button key={k} className="admin-btn" onClick={() => onAddKey(k)}>+ {k}</button>)}</div>}
             </div>
           )}
         </>
       )}
-
       <div className="admin-form-actions ss-add-row" style={{ marginTop: 14 }}>
         <input className="admin-input" style={{ maxWidth: 220 }} placeholder="key" value={newKey} onChange={(e) => setNewKey(e.target.value)} />
         <input className="admin-input" style={{ maxWidth: 300 }} placeholder="value" value={newVal} onChange={(e) => setNewVal(e.target.value)} />
