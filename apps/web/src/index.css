@@ -20,12 +20,91 @@
 }
 .detail-section ul { margin: 0; padding-left: 20px; line-height: 2; color: #4a555c; }
 
-.spec-table { border-collapse: collapse; width: 100%; margin: 0; }
-.spec-table th, .spec-table td {
-  border: 1px solid #e3e8e7; padding: 9px 14px; text-align: center; font-size: 14px; vertical-align: middle;
+/* 技术参数表：PC 端完整显示，数据统一居中 */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
 }
-.spec-table th { background: #f6f8fb; width: 38%; font-weight: 700; }
-.table-scroll { overflow-x: auto; }
+
+.spec-table {
+  width: 100%;
+  min-width: 760px;
+  margin: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #fff;
+  table-layout: auto;
+}
+
+.spec-table th,
+.spec-table td {
+  border: 1px solid #e3e8e7;
+  padding: 11px 14px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #26363e;
+}
+
+.spec-table thead th {
+  background: #f4f7f9;
+  color: #17262d;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.spec-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.spec-table tbody tr:hover {
+  background: #fff8df;
+}
+
+.spec-table th:first-child,
+.spec-table td:first-child {
+  min-width: 150px;
+}
+
+.spec-table th {
+  white-space: normal;
+}
+
+.spec-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .table-scroll {
+    border-left: 1px solid #e3e8e7;
+    border-right: 1px solid #e3e8e7;
+    border-radius: 2px;
+  }
+
+  .spec-table {
+    min-width: 760px;
+  }
+
+  .spec-table th,
+  .spec-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .spec-table th,
+  .spec-table td {
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+}
 
 /* h 标签导航（详情页目录）：由页面 h2/h3 生成 */
 .detail-toc {
