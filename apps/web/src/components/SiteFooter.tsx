@@ -36,10 +36,10 @@ export default function SiteFooter() {
           <div>
             <div className="footer-title">{t('footer.support')}</div>
             <div className="footer-links">
-              <Link to={`${base}/support`}><span>{t('footer.select')}</span></Link>
-              <Link to={`${base}/support`}><span>{t('footer.inspect')}</span></Link>
-              <Link to={`${base}/support`}><span>{t('footer.aftersale')}</span></Link>
-              <Link to={`${base}/support`}><span>{t('footer.spare')}</span></Link>
+              <Link to={`${base}/support/equipment-selection`}><span>{t('footer.select')}</span></Link>
+              <Link to={`${base}/support/inspection-delivery`}><span>{t('footer.inspect')}</span></Link>
+              <Link to={`${base}/support/after-sales`}><span>{t('footer.aftersale')}</span></Link>
+              <Link to={`${base}/support/spare-parts`}><span>{t('footer.spare')}</span></Link>
               <Link to={`${base}/faq`}><span>{t('footer.faq')}</span></Link>
             </div>
           </div>
