@@ -5,12 +5,11 @@ export default function SiteFooter() {
   const { base, lang, t, settings } = useSite();
   const brandZh = settings.site_name_zh || '矿联矿机';
   const brandEn = settings.site_name_en || 'MINELINK EQUIPMENT';
-  const copy =
-    (lang === 'zh' ? settings.site_description_zh : settings.site_description_en) ||
-    t('footer.copy');
-  const phone = settings.contact_phone || '400-800-6628';
-  const email = settings.contact_email || 'sales@minelink.cn';
-  const location = settings.contact_address || t('footer.location');
+  const copy = (lang === 'zh' ? settings.site_description_zh : settings.site_description_en) || t('footer.copy');
+  const phone = String(settings.contact_phone ?? '').trim();
+  const email = String(settings.contact_email ?? '').trim();
+  const location = String(settings.contact_address ?? '').trim();
+  const phoneHref = phone.replace(/[^\d+]/g, '');
 
   return (
     <footer>
@@ -45,11 +44,13 @@ export default function SiteFooter() {
           </div>
           <div>
             <div className="footer-title">{t('footer.contact')}</div>
-            <div className="contact">{phone}</div>
-            <div className="footer-links" style={{ marginTop: 10 }}>
-              <span>{email}</span>
-              <span><span>{location}</span></span>
-            </div>
+            {phone && <div className="contact"><a href={`tel:${phoneHref}`}>{phone}</a></div>}
+            {(email || location) && (
+              <div className="footer-links" style={{ marginTop: 10 }}>
+                {email && <a href={`mailto:${email}`}>{email}</a>}
+                {location && <span>{location}</span>}
+              </div>
+            )}
           </div>
         </div>
         <div className="copyright">
