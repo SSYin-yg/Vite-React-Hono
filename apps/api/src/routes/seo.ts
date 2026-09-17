@@ -11,6 +11,10 @@ const STATIC_PATHS = [
   '/equipment', '/en/equipment',
   '/solutions', '/en/solutions',
   '/support', '/en/support',
+  '/support/equipment-selection', '/en/support/equipment-selection',
+  '/support/inspection-delivery', '/en/support/inspection-delivery',
+  '/support/after-sales', '/en/support/after-sales',
+  '/support/spare-parts', '/en/support/spare-parts',
   '/about', '/en/about',
   '/faq', '/en/faq',
 ];
@@ -55,7 +59,17 @@ ${urls.join('\n')}
 
 app.get('/robots.txt', (c) => {
   const base = siteUrl(c);
-  const txt = `User-agent: *\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`;
+  const txt = [
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin',
+    'Disallow: /en/admin',
+    'Disallow: /api/',
+    'Disallow: /health',
+    '',
+    `Sitemap: ${base}/sitemap.xml`,
+    '',
+  ].join('\n');
   return c.text(txt, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
 });
 
