@@ -9,7 +9,38 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// 管理端点强制鉴权（未配置 ADMIN_TOKEN 时拒绝，不放行）
+// 允许公开返回的站点配置白名单。
+// 不要用「排除 mail_api_key」的黑名单方案：以后新增敏感配置时，默认仍应保持私有。
+const PUBLIC_SETTING_KEYS = new Set([
+  'site_name_zh',
+  'site_name_en',
+  'site_description_zh',
+  'site_description_en',
+  'contact_phone',
+  'contact_email',
+  'contact_address',
+  'contact_whatsapp',
+  'contact_telegram',
+  'contact_widget_enabled',
+  'contact_whatsapp_enabled',
+  'contact_telegram_enabled',
+  'contact_email_enabled',
+  'contact_channels_order',
+  'google_ads_enabled',
+  'google_ads_id',
+  'google_ads_conversion_label',
+  'google_ads_head_code',
+  'google_ads_body_code',
+  'gsc_verification',
+]);
+
+function publicSettings(all: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(all)) {
+    if (PUBLIC_SETTING_KEYS.has(key)) out[key] = value;
+  }
+  return out;
+}
 
 /* ---------------- Google Ads 配置 ---------------- */
 
@@ -89,9 +120,9 @@ function validateAds(body: Record<string, string>): string | null {
   return null;
 }
 
-// 公开：站点全局设置
+// 公开：仅返回允许公开的站点设置；敏感/内部配置留在 D1 内，不通过此端点返回。
 app.get('/site/settings', async (c) => {
-  return c.json(await readSettings(c.env.DB));
+  return c.json(publicSettings(await readSettings(c.env.DB)));
 });
 
 // 公开：Google Ads 配置（前端注入广告代码用）
