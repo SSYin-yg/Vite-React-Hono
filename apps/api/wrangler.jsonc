@@ -34,10 +34,10 @@
   "vars": {
     "MAIL_FROM": "Minelink B2B <noreply@example.com>",
     "MAIL_TO": "sales@example.com",
-    // 站点正式域名，用于 sitemap.xml / robots.txt 生成；上线前改成真实域名
-    "SITE_URL": "https://minelink.example.com"
+    // 站点正式域名，用于 sitemap.xml / robots.txt 生成；同时供 robots.txt / SSR canonical 使用
+    "SITE_URL": "https://www.b2b.ssyin033.top"
   },
   // secrets（不写在配置里，用 `wrangler secret put` 设置）：
   //   RESEND_API_KEY — Resend 邮件 API 密钥，缺省时询盘只落库不发信
-  //   ADMIN_TOKEN    — /api/admin/* 的 Bearer 令牌
+  //   ADMIN_TOKEN    — /api/admin/* 的 Bearer 令牌；生产环境必须使用高强度随机值
 }
