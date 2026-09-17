@@ -22,7 +22,7 @@ const STATIC_PATHS = [
 const app = new Hono<{ Bindings: Bindings }>();
 
 const siteUrl = (c: Context<{ Bindings: Bindings }>): string =>
-  (c.env.SITE_URL ?? 'https://minelink.example.com').replace(/\/+$/, '');
+  (c.env.SITE_URL ?? 'https://www.b2b.ssyin033.top').replace(/\/+$/, '');
 
 // XML 必需转义，避免设备名/链接里的特殊字符破坏文档
 const esc = (s: string): string =>
