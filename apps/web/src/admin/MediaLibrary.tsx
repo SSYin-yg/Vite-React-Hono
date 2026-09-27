@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imageUrl } from '../api';
 import { deleteMedia, listMedia, updateMedia, uploadMedia, type MediaItem } from '../mediaApi';
 import { useAdmin } from './context';
 import { Empty, ErrorBox, Skeleton, useToast } from './ui';
@@ -131,7 +132,9 @@ export default function MediaLibrary() {
           <section className="media-grid">
             {items.map((item) => (
               <article key={item.key} className={'media-card' + (selected?.key === item.key ? ' is-selected' : '')} onClick={() => setSelected(item)}>
-                <div className="media-thumb"><img src={item.url} alt={item.name} loading="lazy" /></div>
+                <div className="media-thumb">
+                  <img src={imageUrl(item.url, 320)} alt={item.name} loading="lazy" decoding="async" width="320" height="240" />
+                </div>
                 <div className="media-card-body">
                   <div className="media-name" title={item.name}>{item.name}</div>
                   <div className="media-meta">{fmtSize(item.size_bytes)} · {item.mime_type || 'image'}</div>
@@ -145,7 +148,7 @@ export default function MediaLibrary() {
             {selected ? (
               <>
                 <div className="media-detail-head"><strong>媒体详情</strong><button className="admin-btn admin-btn-sm" onClick={() => setSelected(null)}>关闭</button></div>
-                <div className="media-detail-preview"><img src={selected.url} alt={selected.name} /></div>
+                <div className="media-detail-preview"><img src={imageUrl(selected.url, 1200)} alt={selected.name} loading="lazy" decoding="async" /></div>
                 <label>名称<input value={selected.name} onChange={(e) => setSelected({ ...selected, name: e.target.value })} /></label>
                 <label>页面 / 模块<input value={selected.page} onChange={(e) => setSelected({ ...selected, page: e.target.value })} placeholder="global / home / about / equipment" /></label>
                 <label>位置<input value={selected.position} onChange={(e) => setSelected({ ...selected, position: e.target.value })} placeholder="hero / banner / gallery / intro" /></label>
