@@ -132,7 +132,7 @@ export default function ContactWidget() {
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener('keydown', onKey);
-      if (previousFocus.current && !open) previousFocus.current.focus();
+      previousFocus.current?.focus();
     };
   }, [open]);
 
