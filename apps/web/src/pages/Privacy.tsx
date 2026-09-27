@@ -32,14 +32,14 @@ export default function Privacy() {
   }, [lang]);
 
   return (
-    <main className="legal-page">
+    <main id="main-content" className="legal-page" aria-labelledby="privacy-title">
       <section className="catalog-hero legal-hero">
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</span>
           </div>
           <div className="eyebrow">{lang === 'en' ? 'LEGAL' : '法律信息'}</div>
-          <h1>{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</h1>
+          <h1 id="privacy-title">{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</h1>
           <p>{lang === 'en' ? 'How Minelink Equipment handles information submitted through the website.' : '了解矿联矿机如何处理通过网站提交的信息。'}</p>
         </div>
       </section>
