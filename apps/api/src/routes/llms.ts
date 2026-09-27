@@ -88,80 +88,89 @@ const json = (c: Ctx, body: unknown) => c.json(body, 200, {
   'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
 });
 
+const aiCatalogJson = (c: Ctx, body: unknown) => c.body(JSON.stringify(body), 200, {
+  'Content-Type':'application/ai-catalog+json; charset=utf-8',
+  'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+});
+
+function airId(namespace: string, id: string): string {
+  const safe = clean(id).toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+  return 'urn:air:b2b-ssyin033.top:' + namespace + ':' + safe;
+}
+
+function pageQueries(title: string, lang: Lang): string[] {
+  return lang === 'zh'
+    ? [`查看${title}的资料`, `如何选购${title}？`]
+    : [`Find information about ${title}`, `How do I select ${title}?`];
+}
+
 function buildAiCatalog(c: Ctx, lang: Lang, rows: EquipmentRow[]) {
   const base = siteUrl(c);
   const prefix = lang === 'en' ? '/en' : '';
-  const pages = Object.keys(STATIC_PAGES).map((path) => {
+  const hostName = lang === 'zh' ? '矿联矿机' : 'Minelink Equipment';
+
+  const pageEntries = Object.keys(STATIC_PAGES).map((path) => {
     const canonical = langPath(path, lang);
     const meta = STATIC_PAGES[path];
+    const title = lang === 'zh' ? meta.zhTitle : meta.enTitle;
+    const description = lang === 'zh' ? meta.zhDesc : meta.enDesc;
+    const pageId = canonical === '/' ? 'home' : canonical.replace(/^\/+|\/+$/g, '').replace(/\//g, ':');
+
     return {
-      path: canonical,
-      title: lang === 'zh' ? meta.zhTitle : meta.enTitle,
-      description: lang === 'zh' ? meta.zhDesc : meta.enDesc,
-      format: { html: base + canonical, markdown: base + mdPath(canonical) },
-    };
-  });
-  const categories = [...new Set(rows.map((r) => clean(r.category)).filter(Boolean))].map((id) => ({
-    id,
-    name: categoryLabel(id, lang),
-  }));
-  const products = rows.map((row) => {
-    const id = row.id;
-    const html = base + prefix + '/equipment/' + encodeURIComponent(id);
-    const markdown = html + '.md';
-    const name = pick(row.name_cn, row.name_en, lang) || id;
-    const images = parseJson<string[]>(row.images, []);
-    const description = pick(row.seo_desc_cn, row.seo_desc_en, lang) || pick(row.desc_cn, row.desc_en, lang);
-    const features = parseJson<string[]>(lang === 'zh' ? row.features_cn : row.features_en, []);
-    const specs = parseJson<{k_zh?:string;k_en?:string;v?:string}[]>(row.specs, []);
-    const tables = parseJson<ModelTable[]>(row.model_tables, []);
-    return {
-      id,
-      name,
-      category: clean(row.category),
-      category_name: categoryLabel(clean(row.category), lang),
-      summary: truncate(description, 240),
-      keywords: clean(row.seo_keywords),
-      features,
-      images: images.map((path) => (/^https?:\/\//i.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path))),
-      specifications: specs.map((s) => ({
-        parameter: pick(s.k_zh, s.k_en, lang),
-        value: clean(s.v),
-      })).filter((s) => s.parameter || s.value),
-      model_tables: tables,
-      urls: {
-        html,
-        markdown,
-        alternate_language: base + (lang === 'zh' ? '/en' : '') + '/equipment/' + encodeURIComponent(id),
+      identifier: airId('page', pageId),
+      displayName: title,
+      type: 'text/markdown',
+      url: base + mdPath(canonical),
+      description,
+      tags: [lang, 'website', canonical === '/' ? 'home' : 'public-page'],
+      capabilities: ['website-information', 'content-discovery'],
+      representativeQueries: pageQueries(title, lang),
+      metadata: {
+        language: lang,
+        htmlUrl: base + canonical,
+        pagePath: canonical,
       },
     };
   });
+
+  const productEntries = rows.map((row) => {
+    const id = clean(row.id);
+    const name = pick(row.name_cn, row.name_en, lang) || id;
+    const category = clean(row.category) || 'equipment';
+    const description = truncate(
+      pick(row.seo_desc_cn, row.seo_desc_en, lang) || pick(row.desc_cn, row.desc_en, lang),
+      240
+    );
+    const mdUrl = base + prefix + '/equipment/' + encodeURIComponent(id) + '.md';
+    const htmlUrl = base + prefix + '/equipment/' + encodeURIComponent(id);
+
+    return {
+      identifier: airId('equipment', id),
+      displayName: name,
+      type: 'text/markdown',
+      url: mdUrl,
+      description: description || (lang === 'zh' ? '矿山机械设备产品资料。' : 'Mining equipment product information.'),
+      tags: [lang, 'mining-equipment', category],
+      capabilities: ['product-information', 'equipment-selection', 'technical-specifications'],
+      representativeQueries: lang === 'zh'
+        ? [`查看${name}的规格参数`, `如何选择${name}？`]
+        : [`What are the specifications of ${name}?`, `How do I select ${name}?`],
+      metadata: {
+        language: lang,
+        productId: id,
+        category,
+        htmlUrl,
+        seoKeywords: clean(row.seo_keywords),
+      },
+    };
+  });
+
   return {
-    schema_version: '1.0',
-    schema_name: 'Minelink AI Catalog',
-    generated_at: new Date().toISOString(),
-    language: lang,
-    site: {
-      name: lang === 'zh' ? '矿联矿机' : 'Minelink Equipment',
-      url: base + (lang === 'en' ? '/en' : '/'),
-      description: lang === 'zh'
-        ? '面向全球矿业客户的 B2B 矿山机械采购与服务平台。'
-        : 'B2B mining equipment sourcing and service platform for global mining customers.',
+    specVersion: '1.0',
+    host: {
+      displayName: hostName,
     },
-    discovery: {
-      llms_txt: base + (lang === 'zh' ? '/llms.txt' : '/en/llms.txt'),
-      sitemap: base + '/sitemap.xml',
-      robots: base + '/robots.txt',
-      current_catalog: base + (lang === 'zh' ? '/ai-catalog.json' : '/en/ai-catalog.json'),
-      schema: base + '/.well-known/ai-catalog.schema.json',
-    },
-    pages,
-    categories,
-    products,
-    policies: {
-      admin: ['/admin', '/en/admin'],
-      api: ['/api/*'],
-    },
+    entries: [...pageEntries, ...productEntries],
   };
 }
 const plain = (c: Ctx, body: string) => c.text(body, 200, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' });
@@ -169,9 +178,9 @@ const plain = (c: Ctx, body: string) => c.text(body, 200, { 'Content-Type':'text
 app.get('/llms.txt', async c => plain(c, buildLlms(c,'zh',await published(c))));
 app.get('/en/llms.txt', async c => plain(c, buildLlms(c,'en',await published(c))));
 
-app.get('/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'zh', await published(c))));
-app.get('/en/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'en', await published(c))));
-app.get('/.well-known/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'zh', await published(c))));
+app.get('/ai-catalog.json', async c => aiCatalogJson(c, buildAiCatalog(c, 'zh', await published(c))));
+app.get('/en/ai-catalog.json', async c => aiCatalogJson(c, buildAiCatalog(c, 'en', await published(c))));
+app.get('/.well-known/ai-catalog.json', async c => aiCatalogJson(c, buildAiCatalog(c, 'zh', await published(c))));
 
 for (const p of Object.keys(STATIC_PAGES)) {
   app.get(mdPath(p), c => { const b=staticMarkdown(c,p,'zh'); return b ? markdown(c,b) : c.notFound(); });
