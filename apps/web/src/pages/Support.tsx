@@ -29,14 +29,14 @@ export default function Support() {
   }, [base]);
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="support-page-title">
       <section className="catalog-hero" style={{ backgroundImage: HERO_BG }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{t('nav.service')}</span>
           </div>
           <div className="eyebrow"><span>{t('service.label')}</span></div>
-          <h1>{t('service.title')}</h1>
+          <h1 id="support-page-title">{t('service.title')}</h1>
           <p><span>{t('service.copy')}</span></p>
         </div>
       </section>
