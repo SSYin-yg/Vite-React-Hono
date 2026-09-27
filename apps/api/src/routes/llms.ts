@@ -5,10 +5,10 @@ type Ctx = Context<{ Bindings: Bindings }>;
 type Lang = 'zh' | 'en';
 
 type EquipmentRow = {
-  id: string; name_cn: string | null; name_en: string | null; category: string | null;
+  id: string; name_cn: string | null; name_en: string | null; category: string | null; images: string | null;
   desc_cn: string | null; desc_en: string | null; features_cn: string | null; features_en: string | null;
   specs: string | null; model_tables: string | null; intro: string | null;
-  seo_title_cn: string | null; seo_title_en: string | null; seo_desc_cn: string | null; seo_desc_en: string | null;
+  seo_title_cn: string | null; seo_title_en: string | null; seo_desc_cn: string | null; seo_desc_en: string | null; seo_keywords: string | null;
 };
 type ModelTable = { title_zh?: string; title_en?: string; columns?: { zh?: string; en?: string }[]; rows?: string[][] };
 type IntroBlock = { title_zh?: string; title_en?: string; body_zh?: string; body_en?: string };
@@ -66,7 +66,7 @@ function equipmentMarkdown(c: Ctx, row: EquipmentRow, lang: Lang): string {
 }
 
 async function published(c: Ctx): Promise<EquipmentRow[]> {
-  const r = await c.env.DB.prepare('SELECT id, name_cn, name_en, category, desc_cn, desc_en, features_cn, features_en, specs, model_tables, intro, seo_title_cn, seo_title_en, seo_desc_cn, seo_desc_en FROM equipment WHERE published = 1 ORDER BY sort ASC, id ASC').all<EquipmentRow>();
+  const r = await c.env.DB.prepare('SELECT id, name_cn, name_en, category, images, desc_cn, desc_en, features_cn, features_en, specs, model_tables, intro, seo_title_cn, seo_title_en, seo_desc_cn, seo_desc_en, seo_keywords FROM equipment WHERE published = 1 ORDER BY sort ASC, id ASC').all<EquipmentRow>();
   return r.results ?? [];
 }
 
@@ -110,6 +110,7 @@ function buildAiCatalog(c: Ctx, lang: Lang, rows: EquipmentRow[]) {
     const html = base + prefix + '/equipment/' + encodeURIComponent(id);
     const markdown = html + '.md';
     const name = pick(row.name_cn, row.name_en, lang) || id;
+    const images = parseJson<string[]>(row.images, []);
     const description = pick(row.seo_desc_cn, row.seo_desc_en, lang) || pick(row.desc_cn, row.desc_en, lang);
     const features = parseJson<string[]>(lang === 'zh' ? row.features_cn : row.features_en, []);
     const specs = parseJson<{k_zh?:string;k_en?:string;v?:string}[]>(row.specs, []);
@@ -120,7 +121,9 @@ function buildAiCatalog(c: Ctx, lang: Lang, rows: EquipmentRow[]) {
       category: clean(row.category),
       category_name: categoryLabel(clean(row.category), lang),
       summary: truncate(description, 240),
+      keywords: clean(row.seo_keywords),
       features,
+      images: images.map((path) => (/^https?:\/\//i.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path))),
       specifications: specs.map((s) => ({
         parameter: pick(s.k_zh, s.k_en, lang),
         value: clean(s.v),
