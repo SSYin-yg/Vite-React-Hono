@@ -213,6 +213,16 @@
                 "format": "uri"
               }
             }
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
           }
         }
       }
