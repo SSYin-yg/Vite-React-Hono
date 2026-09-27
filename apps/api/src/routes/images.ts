@@ -105,7 +105,7 @@ app.get('/api/images/*', async (c) => {
     if (transformed.ok || transformed.status === 304) {
       const headers = new Headers(transformed.headers);
       headers.set('Cache-Control', IMAGE_CACHE_CONTROL);
-      headers.set('Vary', 'Accept, Sec-CH-Viewport-Width, DPR');
+      headers.set('Vary', width === 'auto' ? 'Accept, Sec-CH-Viewport-Width, DPR' : 'Accept');
       headers.set('X-Content-Type-Options', 'nosniff');
       return new Response(transformed.body, {
         status: transformed.status,
