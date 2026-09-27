@@ -23,6 +23,7 @@ type EquipmentImageRow = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 const MAX_LIMIT = 100;
+const IMAGE_CACHE_CONTROL = 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400';
 
 const normalizeUrl = (key: string) => `/api/images/${key}`;
 
@@ -156,7 +157,12 @@ app.post('/admin/media', async (c) => {
   const position = typeof form['position'] === 'string' ? String(form['position']).trim() : '';
   const url = normalizeUrl(key);
 
-  await c.env.IMAGES.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
+  await c.env.IMAGES.put(key, await file.arrayBuffer(), {
+    httpMetadata: {
+      contentType: file.type,
+      cacheControl: IMAGE_CACHE_CONTROL,
+    },
+  });
   await c.env.DB.prepare(
     `INSERT INTO website_images (key,name,page,position,url,mime_type,size_bytes,created_at,updated_at)
      VALUES (?1,?2,?3,?4,?5,?6,?7,datetime('now'),datetime('now'))
