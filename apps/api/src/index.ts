@@ -9,6 +9,7 @@ import media from './routes/media';
 import { requireAdmin, type AdminEnv } from './auth';
 import seo from './routes/seo';
 import images from './routes/images';
+import llms from './routes/llms';
 import { prerenderEquipment } from './prerender';
 import { getGscCode, injectGscMeta } from './gsc';
 import legacySlugs from './legacy-slugs.json';
@@ -78,6 +79,27 @@ app.route('/api', mail);
 app.route('/api', media);
 app.route('/', seo);
 app.route('/', images);
+
+// LLM / agent discoverability: every public HTML page declares its Markdown mirror
+// and the most-specific llms.txt that covers the page, following the llms.txt v2 proposal.
+const llmsLinks = (path: string): { markdown: string; index: string } | null => {
+  if (!path || path === '/llms.txt' || path === '/en/llms.txt' || path.endsWith('.md') || path.endsWith('.txt')) return null;
+  if (path.startsWith('/api/') || path === '/health' || path.startsWith('/admin') || path.startsWith('/en/admin')) return null;
+  const index = path === '/en' || path.startsWith('/en/') ? '/en/llms.txt' : '/llms.txt';
+  const markdown = path === '/' ? '/index.md' : path === '/en' ? '/en/index.md' : path.replace(/\\/$/, '') + '.md';
+  return { markdown, index };
+};
+
+app.use('*', async (c, next) => {
+  await next();
+  const ct = c.res.headers.get('content-type') ?? '';
+  if (!ct.includes('text/html')) return;
+  const links = llmsLinks(c.req.path);
+  if (!links) return;
+  c.header('Link', '<' + links.markdown + '>; rel="alternate"; type="text/markdown", <' + links.index + '>; rel="describedby"');
+});
+
+app.route('/', llms);
 
 app.get('/health', (c) => c.json({ ok: true, ts: Date.now() }));
 
