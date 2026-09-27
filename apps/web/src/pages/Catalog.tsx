@@ -25,6 +25,7 @@ export default function Catalog() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const urlFilter = searchParams.get('filter') ?? searchParams.get('category') ?? 'all';
   const [selected, setSelected] = useState<string>(
@@ -65,6 +66,7 @@ export default function Catalog() {
   // 服务端分页拉取
   useEffect(() => {
     let alive = true;
+    setLoading(true);
     listEquipmentsPage({
       category: selected === 'all' ? undefined : selected,
       q: debounced || undefined,
@@ -78,7 +80,8 @@ export default function Catalog() {
         setTotalPages(r.totalPages);
         setError('');
       })
-      .catch((e) => { if (alive) setError(String(e?.message ?? e)); });
+      .catch((e) => { if (alive) setError(String(e?.message ?? e)); })
+      .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [selected, debounced, page]);
 
@@ -147,44 +150,58 @@ export default function Catalog() {
             <span>{t('catalog.result')}</span> <strong>{total}</strong> <span>{t('catalog.units')}</span>
           </p>
           {error && <p className="error" role="alert" aria-live="assertive">{error}</p>}
-          <div className="product-grid">
-            {items.map((p, i) => {
-              const name = lang === 'zh' ? p.name.zh : p.name.en;
-              const idx = String((page - 1) * PAGE_SIZE + i + 1).padStart(2, '0');
-              return (
-                <article className="card" key={p.id}>
-                  <Link className="card-link" to={`${base}/equipment/${p.id}`}>
-                    <div className="card-art" data-index={idx}>
-                      {p.images[0] && (
-                        <>
-                          <img
-                            src={imageUrl(p.images[0], 320)}
-                            srcSet={imageSrcSet(p.images[0], [320, 480, 768])}
-                            sizes="(max-width: 780px) 100vw, (max-width: 1100px) 50vw, 33vw"
-                            alt={name}
-                            loading="lazy"
-                            decoding="async"
-                          />
-                          <span className="card-art-fallback" data-index={idx} />
-                        </>
-                      )}
-                    </div>
-                    <div className="card-content">
-                      <div className="type">{typeLabels[p.category] ?? p.category}</div>
-                      <h2>{name}</h2>
-                    </div>
-                  </Link>
-                  <div className="card-foot">
-                    <span>{t('catalog.inquiry')}</span>
-                    <button type="button" className="quote" onClick={() => openQuote(name)}>
-                      {t('catalog.quote')}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-          {!error && total === 0 && <div className="empty">{t('catalog.empty')}</div>}
+          {loading ? (
+            <div className="product-grid product-grid-loading" aria-label={lang === 'en' ? 'Loading equipment' : '设备加载中'} aria-busy="true">
+              {Array.from({ length: PAGE_SIZE }, (_, i) => (
+                <div className="card card-skeleton" key={i} aria-hidden="true">
+                  <div className="card-art" />
+                  <div className="card-content"><div className="skeleton-line skeleton-line-sm" /><div className="skeleton-line skeleton-line-lg" /></div>
+                  <div className="card-foot"><div className="skeleton-line skeleton-line-foot" /><div className="skeleton-btn" /></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="product-grid">
+                {items.map((p, i) => {
+                  const name = lang === 'zh' ? p.name.zh : p.name.en;
+                  const idx = String((page - 1) * PAGE_SIZE + i + 1).padStart(2, '0');
+                  return (
+                    <article className="card" key={p.id}>
+                      <Link className="card-link" to={`${base}/equipment/${p.id}`}>
+                        <div className="card-art" data-index={idx}>
+                          {p.images[0] && (
+                            <>
+                              <img
+                                src={imageUrl(p.images[0], 320)}
+                                srcSet={imageSrcSet(p.images[0], [320, 480, 768])}
+                                sizes="(max-width: 780px) 100vw, (max-width: 1100px) 50vw, 33vw"
+                                alt={name}
+                                loading="lazy"
+                                decoding="async"
+                              />
+                              <span className="card-art-fallback" data-index={idx} />
+                            </>
+                          )}
+                        </div>
+                        <div className="card-content">
+                          <div className="type">{typeLabels[p.category] ?? p.category}</div>
+                          <h2>{name}</h2>
+                        </div>
+                      </Link>
+                      <div className="card-foot">
+                        <span>{t('catalog.inquiry')}</span>
+                        <button type="button" className="quote" onClick={() => openQuote(name)}>
+                          {t('catalog.quote')}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+              {!error && total === 0 && <div className="empty">{t('catalog.empty')}</div>}
+            </>
+          )}
 
           {!error && totalPages > 1 && (
             <nav className="pager" aria-label={lang === "en" ? "Pagination" : "分页"}>
