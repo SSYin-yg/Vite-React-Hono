@@ -83,10 +83,91 @@ function buildLlms(c: Ctx, lang: Lang, rows: EquipmentRow[]): string {
 }
 
 const markdown = (c: Ctx, body: string) => c.text(body, 200, { 'Content-Type':'text/markdown; charset=utf-8', 'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' });
+
+const json = (c: Ctx, body: unknown) => c.json(body, 200, {
+  'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+});
+
+function buildAiCatalog(c: Ctx, lang: Lang, rows: EquipmentRow[]) {
+  const base = siteUrl(c);
+  const prefix = lang === 'en' ? '/en' : '';
+  const pages = Object.keys(STATIC_PAGES).map((path) => {
+    const canonical = langPath(path, lang);
+    const meta = STATIC_PAGES[path];
+    return {
+      path: canonical,
+      title: lang === 'zh' ? meta.zhTitle : meta.enTitle,
+      description: lang === 'zh' ? meta.zhDesc : meta.enDesc,
+      format: { html: base + canonical, markdown: base + mdPath(canonical) },
+    };
+  });
+  const categories = [...new Set(rows.map((r) => clean(r.category)).filter(Boolean))].map((id) => ({
+    id,
+    name: categoryLabel(id, lang),
+  }));
+  const products = rows.map((row) => {
+    const id = row.id;
+    const html = base + prefix + '/equipment/' + encodeURIComponent(id);
+    const markdown = html + '.md';
+    const name = pick(row.name_cn, row.name_en, lang) || id;
+    const description = pick(row.seo_desc_cn, row.seo_desc_en, lang) || pick(row.desc_cn, row.desc_en, lang);
+    const features = parseJson<string[]>(lang === 'zh' ? row.features_cn : row.features_en, []);
+    const specs = parseJson<{k_zh?:string;k_en?:string;v?:string}[]>(row.specs, []);
+    const tables = parseJson<ModelTable[]>(row.model_tables, []);
+    return {
+      id,
+      name,
+      category: clean(row.category),
+      category_name: categoryLabel(clean(row.category), lang),
+      summary: truncate(description, 240),
+      features,
+      specifications: specs.map((s) => ({
+        parameter: pick(s.k_zh, s.k_en, lang),
+        value: clean(s.v),
+      })).filter((s) => s.parameter || s.value),
+      model_tables: tables,
+      urls: {
+        html,
+        markdown,
+        alternate_language: base + (lang === 'zh' ? '/en' : '') + '/equipment/' + encodeURIComponent(id),
+      },
+    };
+  });
+  return {
+    schema_version: '1.0',
+    schema_name: 'Minelink AI Catalog',
+    generated_at: new Date().toISOString(),
+    language: lang,
+    site: {
+      name: lang === 'zh' ? '矿联矿机' : 'Minelink Equipment',
+      url: base + (lang === 'en' ? '/en' : '/'),
+      description: lang === 'zh'
+        ? '面向全球矿业客户的 B2B 矿山机械采购与服务平台。'
+        : 'B2B mining equipment sourcing and service platform for global mining customers.',
+    },
+    discovery: {
+      llms_txt: base + (lang === 'zh' ? '/llms.txt' : '/en/llms.txt'),
+      sitemap: base + '/sitemap.xml',
+      robots: base + '/robots.txt',
+      current_catalog: base + (lang === 'zh' ? '/ai-catalog.json' : '/en/ai-catalog.json'),
+    },
+    pages,
+    categories,
+    products,
+    policies: {
+      admin: ['/admin', '/en/admin'],
+      api: ['/api/*'],
+    },
+  };
+}
 const plain = (c: Ctx, body: string) => c.text(body, 200, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' });
 
 app.get('/llms.txt', async c => plain(c, buildLlms(c,'zh',await published(c))));
 app.get('/en/llms.txt', async c => plain(c, buildLlms(c,'en',await published(c))));
+
+app.get('/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'zh', await published(c))));
+app.get('/en/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'en', await published(c))));
+app.get('/.well-known/ai-catalog.json', async c => json(c, buildAiCatalog(c, 'zh', await published(c))));
 
 for (const p of Object.keys(STATIC_PAGES)) {
   app.get(mdPath(p), c => { const b=staticMarkdown(c,p,'zh'); return b ? markdown(c,b) : c.notFound(); });
