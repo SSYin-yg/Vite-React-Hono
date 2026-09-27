@@ -113,14 +113,14 @@ export default function Catalog() {
   );
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="catalog-title">
       <section className="catalog-hero" style={{ backgroundImage: HERO_BG }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{t('nav.catalog')}</span>
           </div>
           <div className="eyebrow"><span>{t('catalog.eyebrow')}</span></div>
-          <h1><span>{t('catalog.title')}</span></h1>
+          <h1 id="catalog-title"><span>{t('catalog.title')}</span></h1>
           <p><span>{t('catalog.copy')}</span></p>
         </div>
       </section>
