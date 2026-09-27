@@ -146,7 +146,7 @@ export default function Catalog() {
           <p className="result-line" role="status" aria-live="polite">
             <span>{t('catalog.result')}</span> <strong>{total}</strong> <span>{t('catalog.units')}</span>
           </p>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert" aria-live="assertive">{error}</p>}
           <div className="product-grid">
             {items.map((p, i) => {
               const name = lang === 'zh' ? p.name.zh : p.name.en;
