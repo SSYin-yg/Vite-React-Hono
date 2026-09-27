@@ -97,7 +97,7 @@ app.use('*', async (c, next) => {
   if (!ct.includes('text/html')) return;
   const links = llmsLinks(c.req.path);
   if (!links) return;
-  c.header('Link', '<' + links.markdown + '>; rel="alternate"; type="text/markdown", <' + links.index + '>; rel="describedby", <' + links.aiCatalog + '>; rel="describedby"; type="application/json"');
+  c.header('Link', '<' + links.markdown + '>; rel="alternate"; type="text/markdown", <' + links.index + '>; rel="describedby", <' + links.aiCatalog + '>; rel="ai-catalog"; type="application/ai-catalog+json"');
 });
 
 app.route('/', llms);
