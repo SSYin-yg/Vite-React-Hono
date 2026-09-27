@@ -111,6 +111,8 @@ export default function Home() {
                       alt={lang === 'zh' ? p.name.zh : p.name.en}
                       loading="lazy"
                       decoding="async"
+                      width="640"
+                      height="640"
                     />
                   )}
                 </div>
