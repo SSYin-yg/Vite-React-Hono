@@ -106,14 +106,14 @@ export default function SupportDetail() {
   }, [detail, lang]);
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="support-detail-title">
       <section className="catalog-hero support-detail-hero" style={{ backgroundImage: `linear-gradient(118deg,rgba(12,27,34,.92),rgba(29,51,58,.86)),url('${HERO_IMAGES.home3}')` }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<Link to={`${base}/support`}>{t('nav.service')}</Link>　/　<span>{t(detail.titleKey)}</span>
           </div>
           <div className="eyebrow"><span>{lang === 'en' ? detail.eyebrowEn : detail.eyebrowZh}</span></div>
-          <h1>{t(detail.titleKey)}</h1>
+          <h1 id="support-detail-title">{t(detail.titleKey)}</h1>
           <p><span>{t(detail.copyKey)}</span></p>
         </div>
       </section>
