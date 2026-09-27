@@ -80,7 +80,7 @@ export default function Support() {
             {STEPS.map(([title, copy], i) => (
               <div className="step" key={title}>
                 <div className="step-no">STEP 0{i + 1}</div>
-                <h4>{t(title)}</h4>
+                <h3>{t(title)}</h3>
                 <p>{t(copy)}</p>
               </div>
             ))}
