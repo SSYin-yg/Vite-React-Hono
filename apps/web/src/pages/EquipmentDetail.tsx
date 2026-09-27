@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getEquipment, readSsrEquipment, type Equipment } from '../api';
+import { getEquipment, imageSrcSet, imageUrl, readSsrEquipment, type Equipment } from '../api';
 import InquiryForm from '../components/InquiryForm';
 import { useSite } from '../site';
 import { setMetaDescription, setMetaKeywords } from '../seo';
@@ -92,8 +92,17 @@ export default function EquipmentDetail() {
       <div className="shell">
         <div className="detail-head">
           <div className="detail-gallery">
-            {item.images.map((src) => (
-              <img key={src} src={`/${src}`} alt={name} loading="lazy" />
+            {item.images.map((src, i) => (
+              <img
+                key={src}
+                src={imageUrl(src, i === 0 ? 768 : 480)}
+                srcSet={imageSrcSet(src, [320, 480, 768, 1200, 1600])}
+                sizes="(max-width: 900px) 100vw, 48vw"
+                alt={name}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
+                decoding="async"
+              />
             ))}
           </div>
           <div className="detail-info">
