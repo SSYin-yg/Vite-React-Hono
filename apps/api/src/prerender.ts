@@ -197,8 +197,8 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
     : '';
 
   const specSection = specs.length
-    ? `\n        <section class="detail-section" id="specs"><h2>${esc(specLabel)}</h2><table class="spec-table"><tbody>\n${specs.map((s) =>
-        `              <tr><th>${esc(lang === 'zh' ? s.k_zh : s.k_en)}</th><td>${esc(s.v)}</td></tr>`
+    ? `\n        <section class="detail-section" id="specs" aria-labelledby="specs-title"><h2 id="specs-title">${esc(specLabel)}</h2><table class="spec-table" aria-label="${attr(specLabel)}"><tbody>\n${specs.map((s) =>
+        `              <tr><th scope="row">${esc(lang === 'zh' ? s.k_zh : s.k_en)}</th><td>${esc(s.v)}</td></tr>`
       ).join('\n')}\n            </tbody></table></section>`
     : '';
 
@@ -206,12 +206,12 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
     const title = pick(tb.title_zh, tb.title_en, lang) || `${modelsLabel} ${ti + 1}`;
     const cols = Array.isArray(tb.columns) ? tb.columns : [];
     const rows = Array.isArray(tb.rows) ? tb.rows : [];
-    return `\n        <section class="detail-section" id="models-${ti + 1}"><h2>${esc(title)}</h2><div class="table-scroll"><table class="spec-table"><thead><tr>${cols.map((col) => `<th>${esc(pick(col.zh, col.en, lang))}</th>`).join('')}</tr></thead><tbody>\n${rows.map((r) => `                <tr>${(Array.isArray(r) ? r : []).map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('\n')}\n              </tbody></table></div></section>`;
+    return `\n        <section class="detail-section" id="models-${ti + 1}" aria-labelledby="model-title-${ti + 1}"><h2 id="model-title-${ti + 1}">${esc(title)}</h2><div class="table-scroll"><table class="spec-table" aria-label="${attr(title)}"><thead><tr>${cols.map((col) => `<th scope="col">${esc(pick(col.zh, col.en, lang))}</th>`).join('')}</tr></thead><tbody>\n${rows.map((r) => `                <tr>${(Array.isArray(r) ? r : []).map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('\n')}\n              </tbody></table></div></section>`;
   }).join('');
 
-  const inquirySection = `\n        <section class="detail-section" id="inquiry"><h2>${esc(inquiryLabel)}</h2><p class="desc">${esc(inquiryHint)}</p></section>`;
+  const inquirySection = `\n        <section class="detail-section" id="inquiry" aria-labelledby="inquiry-title"><h2 id="inquiry-title">${esc(inquiryLabel)}</h2><p class="desc">${esc(inquiryHint)}</p></section>`;
 
-  return `\n      <main class="detail"><div class="shell"><div class="detail-head"><div class="detail-gallery">${gallery}</div><div class="detail-info"><p class="crumbs"><a href="${attr(prefix || '/')}">${esc(homeLabel)}</a>　/　<a href="${attr(prefix + '/equipment')}">${esc(catalogLabel)}</a>　/　${esc(name)}<a class="lang-jump" href="${attr(otherPath)}">${lang === 'zh' ? 'English' : '中文'}</a></p><h1>${esc(name)}</h1>${desc ? `\n              <p class="desc">${esc(desc)}</p>` : ''}${featureList}</div></div>${tocHtml}${introSection}${specSection}${tableSections}${inquirySection}</div></main>`;
+  return `\n      <main id="main-content" class="detail" aria-labelledby="equipment-title"><div class="shell"><div class="detail-head"><div class="detail-gallery">${gallery}</div><div class="detail-info"><p class="crumbs"><a href="${attr(prefix || '/')}">${esc(homeLabel)}</a>　/　<a href="${attr(prefix + '/equipment')}">${esc(catalogLabel)}</a>　/　${esc(name)}<a class="lang-jump" href="${attr(otherPath)}">${lang === 'zh' ? 'English' : '中文'}</a></p><h1 id="equipment-title">${esc(name)}</h1>${desc ? `\n              <p class="desc">${esc(desc)}</p>` : ''}${featureList}</div></div>${tocHtml}${introSection}${specSection}${tableSections}${inquirySection}</div></main>`;
 }
 
 function buildHead(
