@@ -19,42 +19,88 @@ app.use('/api/admin/images', requireAdmin);
 
 app.get('/api/images/*', async (c) => {
   const request = c.req.raw;
-  const key = decodeURIComponent(new URL(request.url).pathname.slice('/api/images/'.length));
+  const url = new URL(request.url);
+  const key = decodeURIComponent(url.pathname.slice('/api/images/'.length));
   if (!key) return c.json({ error: 'not found' }, 404);
 
-  // 直接把条件请求头交给 R2。若 ETag / Last-Modified 条件满足，
-  // R2 会返回只有元数据、没有 body 的对象，避免重新传输图片内容。
-  const conditional = new Headers();
-  const ifNoneMatch = request.headers.get('If-None-Match');
-  const ifModifiedSince = request.headers.get('If-Modified-Since');
-  if (ifNoneMatch) conditional.set('If-None-Match', ifNoneMatch);
-  if (ifModifiedSince) conditional.set('If-Modified-Since', ifModifiedSince);
+  // Cloudflare Images 在通过 cf.image 对当前 Worker 发起内部回源时会带
+  // Via: image-resizing。此分支必须直接读取 R2，避免 Worker 自己套自己形成循环。
+  const isImageTransformOrigin = /image-resizing/i.test(request.headers.get('Via') ?? '');
 
-  const obj = await c.env.IMAGES.get(key, {
-    onlyIf: conditional,
-  });
-  if (!obj) return c.json({ error: 'not found' }, 404);
+  const getRaw = async (): Promise<Response> => {
+    const conditional = new Headers();
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    const ifModifiedSince = request.headers.get('If-Modified-Since');
+    if (ifNoneMatch) conditional.set('If-None-Match', ifNoneMatch);
+    if (ifModifiedSince) conditional.set('If-Modified-Since', ifModifiedSince);
 
-  const headers = new Headers();
-  obj.writeHttpMetadata(headers);
+    const obj = await c.env.IMAGES.get(key, { onlyIf: conditional });
+    if (!obj) return c.json({ error: 'not found' }, 404);
 
-  // 用服务层策略覆盖历史对象可能缺失或过期的缓存元数据。
-  headers.set('Cache-Control', IMAGE_CACHE_CONTROL);
-  headers.set('ETag', obj.httpEtag);
-  headers.set('Content-Length', String(obj.size));
-  headers.set('Accept-Ranges', 'bytes');
-  headers.set('Last-Modified', obj.uploaded.toUTCString());
-  headers.set('X-Content-Type-Options', 'nosniff');
+    const headers = new Headers();
+    obj.writeHttpMetadata(headers);
 
-  // 条件请求未命中时，R2 返回 metadata-only 对象；此时按 HTTP 缓存语义返回 304。
-  if (!obj.body) {
-    return new Response(null, { status: 304, headers });
+    // URL 保持不变，因此采用 30 天缓存而不是 immutable；ETag 负责过期后的轻量验证。
+    headers.set('Cache-Control', IMAGE_CACHE_CONTROL);
+    headers.set('ETag', obj.httpEtag);
+    headers.set('Content-Length', String(obj.size));
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Last-Modified', obj.uploaded.toUTCString());
+    headers.set('X-Content-Type-Options', 'nosniff');
+
+    if (!obj.body) {
+      return new Response(null, { status: 304, headers });
+    }
+
+    return new Response(obj.body, { status: 200, headers });
+  };
+
+  if (isImageTransformOrigin) return getRaw();
+
+  // SVG/GIF 等不做有损转码；常见静态栅格图则在边缘自动压缩。
+  // 使用 width=auto 让 Cloudflare 根据 Client Hints / User-Agent 选择合理宽度。
+  const ext = key.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  const transformable = ['jpg', 'jpeg', 'png', 'webp', 'avif'].includes(ext);
+  if (!transformable) return getRaw();
+
+  const accept = request.headers.get('Accept') ?? '';
+  const format = /image\/avif/i.test(accept)
+    ? 'avif'
+    : /image\/webp/i.test(accept)
+      ? 'webp'
+      : 'jpeg';
+
+  try {
+    const transformed = await fetch(request, {
+      cf: {
+        image: {
+          width: 'auto',
+          fit: 'scale-down',
+          format,
+          quality: 'medium-high',
+          wbreakpoints: '320;768;960;1200;1600',
+          wmobile: 768,
+          wdesktop: 1600,
+        },
+      },
+    });
+
+    if (transformed.ok || transformed.status === 304) {
+      const headers = new Headers(transformed.headers);
+      headers.set('Cache-Control', IMAGE_CACHE_CONTROL);
+      headers.set('Vary', 'Accept');
+      headers.set('X-Content-Type-Options', 'nosniff');
+      return new Response(transformed.body, {
+        status: transformed.status,
+        headers,
+      });
+    }
+
+    return getRaw();
+  } catch {
+    // Image Transformations 暂时不可用时，网站继续使用原始 R2 图片，避免图片断裂。
+    return getRaw();
   }
-
-  return new Response(obj.body, {
-    status: 200,
-    headers,
-  });
 });
 
 app.post('/api/admin/images', async (c) => {
