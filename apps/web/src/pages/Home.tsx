@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSite } from '../site';
 import { HERO_IMAGES } from '../i18n';
-import { listEquipments, type EquipmentSummary } from '../api';
+import { imageSrcSet, imageUrl, listEquipments, type EquipmentSummary } from '../api';
 import { setMetaDescription } from '../seo';
 
 const TYPE_ZH: Record<string, string> = { mobile: '移动破碎站', crushing: '破碎制砂', screening: '筛分输送', washing: '洗砂设备', parts: '易损件' };
@@ -105,7 +105,9 @@ export default function Home() {
                 <div className={`p-img${p.images[0] ? '' : ' no-img'}`}>
                   {p.images[0] && (
                     <img
-                      src={`/${p.images[0]}`}
+                      src={imageUrl(p.images[0], 320)}
+                      srcSet={imageSrcSet(p.images[0], [320, 480, 640])}
+                      sizes="(max-width: 700px) 50vw, (max-width: 1100px) 50vw, 25vw"
                       alt={lang === 'zh' ? p.name.zh : p.name.en}
                       loading="lazy"
                       decoding="async"
