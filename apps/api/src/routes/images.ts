@@ -24,7 +24,15 @@ app.get('/api/images/*', async (c) => {
 
   // 直接把条件请求头交给 R2。若 ETag / Last-Modified 条件满足，
   // R2 会返回只有元数据、没有 body 的对象，避免重新传输图片内容。
-  const obj = await c.env.IMAGES.get(key, { onlyIf: request.headers });
+  const conditional = new Headers();
+  const ifNoneMatch = request.headers.get('If-None-Match');
+  const ifModifiedSince = request.headers.get('If-Modified-Since');
+  if (ifNoneMatch) conditional.set('If-None-Match', ifNoneMatch);
+  if (ifModifiedSince) conditional.set('If-Modified-Since', ifModifiedSince);
+
+  const obj = await c.env.IMAGES.get(key, {
+    onlyIf: conditional,
+  });
   if (!obj) return c.json({ error: 'not found' }, 404);
 
   const headers = new Headers();
@@ -35,6 +43,8 @@ app.get('/api/images/*', async (c) => {
   headers.set('ETag', obj.httpEtag);
   headers.set('Content-Length', String(obj.size));
   headers.set('Accept-Ranges', 'bytes');
+  headers.set('Last-Modified', obj.uploaded.toUTCString());
+  headers.set('X-Content-Type-Options', 'nosniff');
 
   // 条件请求未命中时，R2 返回 metadata-only 对象；此时按 HTTP 缓存语义返回 304。
   if (!obj.body) {
