@@ -91,13 +91,16 @@ function Shell({ lang }: { lang: Lang }) {
 
 export default function App() {
   return (
-    <Suspense fallback={<RouteFallback />}>
+    <>
+      <a className="skip-link" href="#main-content">{document.documentElement.lang === 'en' ? 'Skip to main content' : '跳转到主要内容'}</a>
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/en/admin/*" element={<AdminApp lang="en" base="/en/admin" />} />
         <Route path="/admin/*" element={<AdminApp lang="zh" base="/admin" />} />
         <Route path="/en/*" element={<Shell lang="en" />} />
         <Route path="/*" element={<Shell lang="zh" />} />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </>
   );
 }
