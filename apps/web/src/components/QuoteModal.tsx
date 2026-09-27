@@ -14,7 +14,7 @@ export default function QuoteModal({
   prefillEquipment?: string;
   onClose: () => void;
 }) {
-  const { t } = useSite();
+  const { t, lang } = useSite();
   const [state, setState] = useState<'idle' | 'sending' | 'done'>(open ? 'idle' : 'done');
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -85,7 +85,7 @@ export default function QuoteModal({
   return (
     <div className="modal open" role="presentation" ref={ref} onClick={(e) => e.target === ref.current && onClose()}>
       <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="quote-modal-title" aria-describedby="quote-modal-copy" tabIndex={-1}>
-        <button ref={closeRef} type="button" className="close" aria-label={t('modal.close') === 'modal.close' ? '关闭' : t('modal.close')} onClick={onClose}>×</button>
+        <button ref={closeRef} type="button" className="close" aria-label={lang === 'en' ? 'Close quotation form' : '关闭报价表单'} onClick={onClose}>×</button>
         <h2 id="quote-modal-title"><span>{t('modal.title')}</span></h2>
         <p id="quote-modal-copy"><span>{t('modal.copy')}</span></p>
         {state === 'done' ? (
