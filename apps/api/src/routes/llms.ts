@@ -74,7 +74,7 @@ function buildLlms(c: Ctx, lang: Lang, rows: EquipmentRow[]): string {
   const base=siteUrl(c); const prefix=lang==='en'?'/en':''; const title=lang==='zh'?'矿联矿机':'Minelink Equipment';
   const summary=lang==='zh'?'矿联矿机是面向全球矿业客户的 B2B 矿山机械采购与服务平台，提供公开的设备、技术资料、行业方案、采购支持和常见问题信息。':'Minelink Equipment is a B2B mining equipment sourcing and service platform for global mining customers, providing public equipment, technical, solution, support and FAQ information.';
   const caution=lang==='zh'?'以下链接优先指向 LLM 友好的 Markdown 页面。设备详情来自已发布的站点数据库记录；规格、型号和产品描述应以对应产品页面为准。未公开的信息不应从页面内容推断。':'The links below prioritize LLM-friendly Markdown pages. Equipment details come from published site database records; specifications, models and descriptions should be taken from the corresponding product page. Do not infer unpublished information.';
-  const lines=['# '+title,'','> '+summary,'',caution,'','## '+(lang==='zh'?'核心页面':'Core Pages'),'','- ['+(lang==='zh'?'首页':'Home')+']('+base+mdPath(prefix||'/')+')','- ['+(lang==='zh'?'设备中心':'Equipment Catalog')+']('+base+mdPath(prefix+'/equipment')+')','- ['+(lang==='zh'?'行业方案':'Industry Solutions')+']('+base+mdPath(prefix+'/solutions')+')','- ['+(lang==='zh'?'服务支持':'Support')+']('+base+mdPath(prefix+'/support')+')','- ['+(lang==='zh'?'关于我们':'About')+']('+base+mdPath(prefix+'/about')+')','- ['+(lang==='zh'?'常见问题':'FAQ')+']('+base+mdPath(prefix+'/faq')+')','', '## '+(lang==='zh'?'支持专题':'Support Topics'),''];
+  const lines=['# '+title,'','> '+summary,'',caution,'','## '+(lang==='zh'?'核心页面':'Core Pages'),'','- ['+(lang==='zh'?'AI Catalog JSON':'AI Catalog JSON')+']('+base+(lang==='zh'?'/ai-catalog.json':'/en/ai-catalog.json')+')','- ['+(lang==='zh'?'首页':'Home')+']('+base+mdPath(prefix||'/')+')','- ['+(lang==='zh'?'设备中心':'Equipment Catalog')+']('+base+mdPath(prefix+'/equipment')+')','- ['+(lang==='zh'?'行业方案':'Industry Solutions')+']('+base+mdPath(prefix+'/solutions')+')','- ['+(lang==='zh'?'服务支持':'Support')+']('+base+mdPath(prefix+'/support')+')','- ['+(lang==='zh'?'关于我们':'About')+']('+base+mdPath(prefix+'/about')+')','- ['+(lang==='zh'?'常见问题':'FAQ')+']('+base+mdPath(prefix+'/faq')+')','', '## '+(lang==='zh'?'支持专题':'Support Topics'),''];
   for(const p of ['/support/equipment-selection','/support/inspection-delivery','/support/after-sales','/support/spare-parts']) { const meta=STATIC_PAGES[p]; lines.push('- ['+(lang==='zh'?meta.zhTitle:meta.enTitle)+']('+base+mdPath(langPath(p,lang))+')'); }
   lines.push('', '## '+(lang==='zh'?'设备详情':'Equipment'), '');
   for(const row of rows){ const name=pick(row.name_cn,row.name_en,lang)||row.id; const p=prefix+'/equipment/'+encodeURIComponent(row.id); const desc=truncate(pick(row.seo_desc_cn,row.seo_desc_en,lang)||pick(row.desc_cn,row.desc_en,lang),180); lines.push('- ['+md(name)+']('+base+mdPath(p)+'): '+md(desc||categoryLabel(clean(row.category),lang))); }
@@ -153,6 +153,7 @@ function buildAiCatalog(c: Ctx, lang: Lang, rows: EquipmentRow[]) {
       sitemap: base + '/sitemap.xml',
       robots: base + '/robots.txt',
       current_catalog: base + (lang === 'zh' ? '/ai-catalog.json' : '/en/ai-catalog.json'),
+      schema: base + '/.well-known/ai-catalog.schema.json',
     },
     pages,
     categories,
