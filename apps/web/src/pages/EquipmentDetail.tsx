@@ -88,7 +88,7 @@ export default function EquipmentDetail() {
   toc.push({ id: 'inquiry', label: L.inquiry, sub: false });
 
   return (
-    <main className="detail">
+    <main id="main-content" className="detail" aria-labelledby="equipment-title">
       <div className="shell">
         <div className="detail-head">
           <div className="detail-gallery">
@@ -104,7 +104,7 @@ export default function EquipmentDetail() {
                 {lang === 'zh' ? 'English' : '中文'}
               </Link>
             </p>
-            <h1>{name}</h1>
+            <h1 id="equipment-title">{name}</h1>
             {desc && <p className="desc">{desc}</p>}
             {features.length > 0 && (
               <ul>
