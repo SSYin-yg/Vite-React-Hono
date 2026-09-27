@@ -11,8 +11,8 @@ export function tr(lang: Lang, key: string): string {
 
 /** 首页轮播等页面使用的生产头图（已迁至 R2：/api/images/global/<file>） */
 export const HERO_IMAGES = {
-  home1: '/api/images/global/1788670622_899fd2_f0595f56df.jpg',
-  home2: '/api/images/global/1788670622_e2fbce_2194f69fb0.jpg',
-  home3: '/api/images/global/1788670622_be892b_c476041743.jpg',
+  home1: '/api/images/global/1788670622_899fd2_f0595f56df.jpg?w=auto',
+  home2: '/api/images/global/1788670622_e2fbce_2194f69fb0.jpg?w=auto',
+  home3: '/api/images/global/1788670622_be892b_c476041743.jpg?w=auto',
   side: '/api/images/global/1788670622_899fd2_f0595f56df.jpg',
 };
