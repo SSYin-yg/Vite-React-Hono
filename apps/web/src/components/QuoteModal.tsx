@@ -89,7 +89,7 @@ export default function QuoteModal({
         <h2 id="quote-modal-title"><span>{t('modal.title')}</span></h2>
         <p id="quote-modal-copy"><span>{t('modal.copy')}</span></p>
         {state === 'done' ? (
-          <div className="success" style={{ display: 'block' }}>
+          <div className="success" role="status" aria-live="polite" style={{ display: 'block' }}>
             <span>{t('modal.success')}</span>
           </div>
         ) : (
