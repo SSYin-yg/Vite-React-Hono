@@ -5,9 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="矿联矿机，为全球矿山提供设备选型、整机采购与全生命周期服务。" />
     <title>矿联矿机 | 矿用设备一站式采购平台</title>
+
+    <!-- 首页 LCP Hero 原来通过 React + CSS background 动态发现，浏览器会晚于 HTML 才发现图片。
+         这里提前预加载首张 Hero，让移动端首屏尽早取得 LCP 资源。 -->
+    <link
+      rel="preload"
+      as="image"
+      fetchpriority="high"
+      href="/api/images/global/1788670622_899fd2_f0595f56df.jpg"
+      type="image/jpeg"
+    />
+
+    <!-- Google Fonts 改为非阻塞加载；系统字体先用于首屏绘制，字体到达后平滑替换。 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
