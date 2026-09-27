@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { SiteProvider, useSite, useQuoteState } from './site';
 import SiteHeader from './components/SiteHeader';
@@ -18,8 +18,9 @@ const About = lazy(() => import('./pages/About'));
 const Faq = lazy(() => import('./pages/Faq'));
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
-// 非首屏交互组件延迟加载：只有打开报价或需要客服组件时才下载对应代码。
+// 报价弹窗只在用户真正点击 CTA 后下载。
 const QuoteModal = lazy(() => import('./components/QuoteModal'));
+// 客服浮窗在浏览器空闲后下载，避免首屏与 Hero / React 启动争抢资源。
 const ContactWidget = lazy(() => import('./components/ContactWidget'));
 
 function RouteFallback() {
@@ -33,6 +34,23 @@ function NotFound() {
 
 function Shell({ lang }: { lang: Lang }) {
   const { quote, openQuote, closeQuote } = useQuoteState();
+  const [contactReady, setContactReady] = useState(false);
+
+  useEffect(() => {
+    let timer = 0;
+    const load = () => setContactReady(true);
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(load, { timeout: 3000 });
+    } else {
+      timer = window.setTimeout(load, 2000);
+    }
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <SiteProvider lang={lang} onQuote={openQuote}>
       <SiteHeader />
@@ -51,11 +69,22 @@ function Shell({ lang }: { lang: Lang }) {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-      <SiteFooter />
-      <Suspense fallback={null}>
-        <QuoteModal open={quote.open} prefillEquipment={quote.equipment} onClose={closeQuote} />
-        <ContactWidget />
-      </Suspense>
+
+      {quote.open && (
+        <Suspense fallback={null}>
+          <QuoteModal
+            open
+            prefillEquipment={quote.equipment}
+            onClose={closeQuote}
+          />
+        </Suspense>
+      )}
+
+      {contactReady && (
+        <Suspense fallback={null}>
+          <ContactWidget />
+        </Suspense>
+      )}
     </SiteProvider>
   );
 }
