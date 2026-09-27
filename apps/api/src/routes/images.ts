@@ -68,7 +68,9 @@ app.get('/api/images/*', async (c) => {
     ? 'avif'
     : /image\/webp/i.test(accept)
       ? 'webp'
-      : 'jpeg';
+      : ext === 'png'
+        ? 'png'
+        : 'jpeg';
 
   try {
     const transformed = await fetch(request, {
