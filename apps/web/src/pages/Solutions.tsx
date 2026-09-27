@@ -80,7 +80,7 @@ export default function Solutions() {
                 <ul className="sol-points">
                   {c.points.map((p) => <li key={p}>{t(p)}</li>)}
                 </ul>
-              </div>
+              </article>
             ))}
           </div>
         </div>
