@@ -51,8 +51,13 @@ export default function Home() {
       <section className="hero">
         <div className="hero-slides">
           {SLIDES.map((src, i) => (
-            <div key={src} className={`hero-slide ${i === slide ? 'active' : ''}`}
-              style={{ backgroundImage: `url('${src}')` }} />
+            <div
+              key={src}
+              className={`hero-slide ${i === slide ? 'active' : ''}`}
+              // 只给当前幻灯片设置背景图，避免首屏同时下载 3 张大型 Hero 图片。
+              style={i === slide ? { backgroundImage: `url('${src}')` } : undefined}
+              aria-hidden={i !== slide}
+            />
           ))}
         </div>
         <div className="hero-dots">
@@ -98,7 +103,14 @@ export default function Home() {
             {featured.map((p) => (
               <Link className="product" to={`${base}/equipment/${p.id}`} key={p.id}>
                 <div className={`p-img${p.images[0] ? '' : ' no-img'}`}>
-                  {p.images[0] && <img src={`/${p.images[0]}`} alt={lang === 'zh' ? p.name.zh : p.name.en} loading="lazy" />}
+                  {p.images[0] && (
+                    <img
+                      src={`/${p.images[0]}`}
+                      alt={lang === 'zh' ? p.name.zh : p.name.en}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                 </div>
                 <span className="tag">{(lang === 'en' ? TYPE_EN : TYPE_ZH)[p.category] ?? (lang === 'en' ? 'EQUIPMENT' : '设备')}</span>
                 <div className="p-cap"><h3>{lang === 'zh' ? p.name.zh : p.name.en}</h3></div>
