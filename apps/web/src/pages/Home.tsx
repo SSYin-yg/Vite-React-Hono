@@ -14,6 +14,7 @@ export default function Home() {
   const { t, lang, base, openQuote, settings } = useSite();
   const [slide, setSlide] = useState(0);
   const [featured, setFeatured] = useState<EquipmentSummary[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
   useEffect(() => {
     document.title = lang === 'zh'
@@ -33,7 +34,8 @@ export default function Home() {
   useEffect(() => {
     listEquipments()
       .then((list) => setFeatured([...list].sort(() => Math.random() - 0.5).slice(0, 4)))
-      .catch(() => setFeatured([]));
+      .catch(() => setFeatured([]))
+      .finally(() => setFeaturedLoading(false));
   }, []);
 
   const metrics = useMemo(
@@ -99,29 +101,40 @@ export default function Home() {
               <Link className="catalog-link" to={`${base}/equipment`}><span>{t('products.catalogLink')}</span></Link>
             </p>
           </div>
-          <div className="product-grid">
-            {featured.map((p) => (
-              <Link className="product" to={`${base}/equipment/${p.id}`} key={p.id}>
-                <div className={`p-img${p.images[0] ? '' : ' no-img'}`}>
-                  {p.images[0] && (
-                    <img
-                      src={imageUrl(p.images[0], 320)}
-                      srcSet={imageSrcSet(p.images[0], [320, 480, 640])}
-                      sizes="(max-width: 700px) 50vw, (max-width: 1100px) 50vw, 25vw"
-                      alt={lang === 'zh' ? p.name.zh : p.name.en}
-                      loading="lazy"
-                      decoding="async"
-                      width="640"
-                      height="640"
-                    />
-                  )}
+          {featuredLoading ? (
+            <div className="product-grid product-grid-home-loading" aria-label={lang === 'en' ? 'Loading featured equipment' : '精选设备加载中'} aria-busy="true">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div className="product product-skeleton" key={i} aria-hidden="true">
+                  <div className="p-img" />
+                  <div className="p-cap"><div className="home-skeleton-line" /></div>
                 </div>
-                <span className="tag">{(lang === 'en' ? TYPE_EN : TYPE_ZH)[p.category] ?? (lang === 'en' ? 'EQUIPMENT' : '设备')}</span>
-                <div className="p-cap"><h3>{lang === 'zh' ? p.name.zh : p.name.en}</h3></div>
-                <span className="arrow">→</span>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="product-grid">
+              {featured.map((p) => (
+                <Link className="product" to={`${base}/equipment/${p.id}`} key={p.id}>
+                  <div className={`p-img${p.images[0] ? '' : ' no-img'}`}>
+                    {p.images[0] && (
+                      <img
+                        src={imageUrl(p.images[0], 320)}
+                        srcSet={imageSrcSet(p.images[0], [320, 480, 640])}
+                        sizes="(max-width: 700px) 50vw, (max-width: 1100px) 50vw, 25vw"
+                        alt={lang === 'zh' ? p.name.zh : p.name.en}
+                        loading="lazy"
+                        decoding="async"
+                        width="640"
+                        height="640"
+                      />
+                    )}
+                  </div>
+                  <span className="tag">{(lang === 'en' ? TYPE_EN : TYPE_ZH)[p.category] ?? (lang === 'en' ? 'EQUIPMENT' : '设备')}</span>
+                  <div className="p-cap"><h3>{lang === 'zh' ? p.name.zh : p.name.en}</h3></div>
+                  <span className="arrow">→</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
