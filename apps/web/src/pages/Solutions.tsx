@@ -48,12 +48,12 @@ export default function Solutions() {
         </div>
       </section>
 
-      <section className="page-intro">
+      <section className="page-intro" aria-labelledby="solutions-intro-title">
         <div className="shell">
           <div className="section-head">
             <div>
               <div className="section-label"><span>{t('solutions.label')}</span></div>
-              <h2>{t('solutions.title')}</h2>
+              <h2 id="solutions-intro-title">{t('solutions.title')}</h2>
             </div>
             <p><span>{t('solutions.copy')}</span></p>
           </div>
@@ -64,7 +64,7 @@ export default function Solutions() {
         <div className="shell">
           <div className="sol-grid">
             {CARDS.map((c) => (
-              <div className="sol-card" key={c.num}>
+              <article className="sol-card" key={c.num}>
                 <div className="sol-num">{c.num}</div>
                 <h3>{t(c.title)}</h3>
                 <p className="sol-desc">{t(c.desc)}</p>
@@ -89,7 +89,7 @@ export default function Solutions() {
       <section className="cta">
         <div className="shell">
           <div>
-            <h2><span>{t('cta.title')}</span></h2>
+            <h2 id="solutions-cta-title"><span>{t('cta.title')}</span></h2>
             <p><span>{t('cta.copy')}</span></p>
           </div>
           <button type="button" className="primary" onClick={() => openQuote()}><span>{t('cta.btn')}</span></button>
