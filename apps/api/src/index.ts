@@ -82,12 +82,13 @@ app.route('/', images);
 
 // LLM / agent discoverability: every public HTML page declares its Markdown mirror
 // and the most-specific llms.txt that covers the page, following the llms.txt v2 proposal.
-const llmsLinks = (path: string): { markdown: string; index: string } | null => {
+const llmsLinks = (path: string): { markdown: string; index: string; aiCatalog: string } | null => {
   if (!path || path === '/llms.txt' || path === '/en/llms.txt' || path.endsWith('.md') || path.endsWith('.txt')) return null;
   if (path.startsWith('/api/') || path === '/health' || path.startsWith('/admin') || path.startsWith('/en/admin')) return null;
   const index = path === '/en' || path.startsWith('/en/') ? '/en/llms.txt' : '/llms.txt';
+  const aiCatalog = path === '/en' || path.startsWith('/en/') ? '/en/ai-catalog.json' : '/ai-catalog.json';
   const markdown = path === '/' ? '/index.md' : path === '/en' ? '/en/index.md' : path.replace(/\/$/, '') + '.md';
-  return { markdown, index };
+  return { markdown, index, aiCatalog };
 };
 
 app.use('*', async (c, next) => {
@@ -96,7 +97,7 @@ app.use('*', async (c, next) => {
   if (!ct.includes('text/html')) return;
   const links = llmsLinks(c.req.path);
   if (!links) return;
-  c.header('Link', '<' + links.markdown + '>; rel="alternate"; type="text/markdown", <' + links.index + '>; rel="describedby"');
+  c.header('Link', '<' + links.markdown + '>; rel="alternate"; type="text/markdown", <' + links.index + '>; rel="describedby", <' + links.aiCatalog + '>; rel="describedby"; type="application/json"');
 });
 
 app.route('/', llms);
