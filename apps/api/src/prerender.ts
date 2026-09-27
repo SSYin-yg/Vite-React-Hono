@@ -115,6 +115,13 @@ const absUrl = (base: string, path: unknown): string => {
 const siteUrl = (c: Ctx): string =>
   (c.env.SITE_URL ?? SITE_URL_FALLBACK).replace(/\/+$/, '');
 
+const responsiveImage = (base: string, path: unknown, width: number): string => {
+  const url = absUrl(base, path);
+  if (!url || !url.includes('/api/images/')) return url;
+  const join = url.includes('?') ? '&' : '?';
+  return url + join + 'w=' + width;
+};
+
 async function getTemplate(c: Ctx): Promise<string | null> {
   try {
     const url = new URL('/index.html', c.req.url);
@@ -154,9 +161,14 @@ function buildBody(row: EquipmentRow, lang: Lang, base: string): string {
   const prefix = lang === 'en' ? '/en' : '';
 
   const gallery = images.length
-    ? images.map((src, i) =>
-        `<img src="${attr(absUrl(base, src))}" alt="${attr(name)}"${i === 0 ? '' : ' loading="lazy"'} />`
-      ).join('\n            ')
+    ? images.map((src, i) => {
+        const width = i === 0 ? 768 : 480;
+        const srcUrl = responsiveImage(base, src, width);
+        const srcSet = [320, 480, 768, 1200, 1600]
+          .map((w) => attr(responsiveImage(base, src, w)) + ' ' + w + 'w')
+          .join(', ');
+        return `<img src="${attr(srcUrl)}" srcset="${srcSet}" sizes="(max-width: 900px) 100vw, 48vw" width="768" height="768" alt="${attr(name)}" loading="${i === 0 ? 'eager' : 'lazy'}" fetchpriority="${i === 0 ? 'high' : 'auto'}" decoding="async" />`;
+      }).join('\n            ')
     : '';
 
   const featureList = features.length
