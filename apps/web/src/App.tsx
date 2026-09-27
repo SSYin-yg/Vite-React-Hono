@@ -92,7 +92,7 @@ function Shell({ lang }: { lang: Lang }) {
 export default function App() {
   return (
     <>
-      <a className="skip-link" href="#main-content">{document.documentElement.lang === 'en' ? 'Skip to main content' : '跳转到主要内容'}</a>
+      <a className="skip-link" href="#main-content">跳转到主要内容 / Skip to main content</a>
       <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/en/admin/*" element={<AdminApp lang="en" base="/en/admin" />} />
