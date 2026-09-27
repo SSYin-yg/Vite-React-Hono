@@ -36,14 +36,14 @@ export default function Solutions() {
   }, [base]);
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="solutions-page-title">
       <section className="catalog-hero" style={{ backgroundImage: HERO_BG }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{t('nav.solutions')}</span>
           </div>
           <div className="eyebrow"><span>{t('solutions.label')}</span></div>
-          <h1>{t('solutions.hero.title')}</h1>
+          <h1 id="solutions-page-title">{t('solutions.hero.title')}</h1>
           <p><span>{t('solutions.hero.copy')}</span></p>
         </div>
       </section>
