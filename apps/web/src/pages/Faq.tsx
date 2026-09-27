@@ -15,14 +15,14 @@ export default function Faq() {
   }, [base]);
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="faq-page-title">
       <section className="catalog-hero" style={{ backgroundImage: HERO_BG }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{t('nav.faq')}</span>
           </div>
           <div className="eyebrow">{t('faq.eyebrow')}</div>
-          <h1>{t('faq.title')}</h1>
+          <h1 id="faq-page-title">{t('faq.title')}</h1>
           <p><span>{t('faq.copy')}</span></p>
         </div>
       </section>
