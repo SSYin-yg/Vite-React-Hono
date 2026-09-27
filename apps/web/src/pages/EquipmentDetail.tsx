@@ -39,12 +39,12 @@ export default function EquipmentDetail() {
     if (kw) setMetaKeywords(kw);
   }, [item, lang]);
 
-  if (item === 'loading') return <main><div className="shell" style={{ padding: '60px 0' }}>…</div></main>;
+  if (item === 'loading') return <main id="main-content" aria-label={lang === 'en' ? 'Loading equipment' : '设备加载中'}><div className="shell" style={{ padding: '60px 0' }} role="status" aria-live="polite">…</div></main>;
   if (!item)
     return (
-      <main>
+      <main id="main-content" aria-labelledby="equipment-not-found-title">
         <div className="shell" style={{ padding: '60px 0' }}>
-          <h1>404</h1>
+          <h1 id="equipment-not-found-title">404</h1>
           <Link to={`${base}/equipment`}>← {t('nav.catalog')}</Link>
         </div>
       </main>
