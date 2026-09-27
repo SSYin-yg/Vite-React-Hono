@@ -33,13 +33,13 @@ export default function SiteHeader() {
 
   return (
     <>
-      <div className="topbar">
+      <div className="topbar" role="complementary" aria-label={lang === 'en' ? 'Site utilities' : '网站辅助信息'}>
         <div className="shell">
           <span className="topbar-left"><span>{t('topbar.tagline')}</span></span>
           <div className="topbar-right">
-            <div className="lang-switch" role="group" aria-label="Language">
-              <Link to={pathname} className={`lang-btn ${lang === 'zh' ? 'active' : ''}`} aria-pressed={lang === 'zh'}>中文</Link>
-              <Link to={otherPath} className={`lang-btn ${lang === 'en' ? 'active' : ''}`} aria-pressed={lang === 'en'}>EN</Link>
+            <div className="lang-switch" role="group" aria-label={lang === 'en' ? 'Language' : '语言'}>
+              <Link to={pathname} className={`lang-btn ${lang === 'zh' ? 'active' : ''}`} aria-current={lang === 'zh' ? 'page' : undefined}>中文</Link>
+              <Link to={otherPath} className={`lang-btn ${lang === 'en' ? 'active' : ''}`} aria-current={lang === 'en' ? 'page' : undefined}>EN</Link>
             </div>
           </div>
         </div>
@@ -47,10 +47,10 @@ export default function SiteHeader() {
       <header>
         <div className="shell">
           <Link to={base || '/'} className="brand" aria-label={t('nav.home')}>
-            <span className="brand-mark" aria-label="网站 Logo">M</span>
+            <span className="brand-mark" aria-hidden="true">M</span>
             <span>{brandZh}<small>{brandEn}</small></span>
           </Link>
-          <nav id="nav" className={menuOpen ? 'open' : ''} aria-label="Primary navigation">
+          <nav id="nav" className={menuOpen ? 'open' : ''} aria-label={lang === 'en' ? 'Primary navigation' : '主导航'}>
             {NAV.map((n) => (
               <NavLink key={n.key} to={`${base}${n.to}`} end={n.end} onClick={() => setMenuOpen(false)}>
                 {t(n.key)}
