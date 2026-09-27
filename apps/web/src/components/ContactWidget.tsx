@@ -70,6 +70,7 @@ export default function ContactWidget() {
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(true);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const txt = useCallback((key: string, fbZh: string, fbEn: string) => {
@@ -121,9 +122,18 @@ export default function ContactWidget() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusTimer = window.setTimeout(() => {
+      const first = panelRef.current?.querySelector<HTMLElement>('button,a[href]');
+      first?.focus();
+    }, 0);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); setOpen(false); } };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKey);
+      if (previousFocus.current && !open) previousFocus.current.focus();
+    };
   }, [open]);
 
   const touch = useRef({ x: 0, y: 0, dragging: false });
@@ -179,11 +189,11 @@ export default function ContactWidget() {
       </button>
 
       <div className={open ? 'cw-overlay is-open' : 'cw-overlay'} aria-hidden="true" onClick={() => setOpen(false)} />
-      <div ref={panelRef} id="cwPanel" className={open ? 'cw-panel is-open' : 'cw-panel'} role="dialog" aria-modal="true" aria-labelledby="cwTitle" aria-hidden={!open}>
+      <div ref={panelRef} id="cwPanel" className={open ? 'cw-panel is-open' : 'cw-panel'} role="dialog" aria-modal="true" aria-labelledby="cwTitle" aria-describedby="cwSub" aria-hidden={!open}>
         <div className="cw-head">
           <div>
             <div className="cw-title-row"><h2 id="cwTitle">{title}</h2><span className="cw-online">{online}</span></div>
-            <p className="cw-sub">{sub}</p>
+            <p id="cwSub" className="cw-sub">{sub}</p>
           </div>
           <button type="button" className="cw-close" aria-label={closeLabel} onClick={() => setOpen(false)}>{Ico.close}</button>
         </div>
