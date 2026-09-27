@@ -128,7 +128,7 @@ export default function Catalog() {
       <section className="catalog-body">
         <div className="shell" ref={bodyRef}>
           <div className="tools">
-            <div className="filters">
+            <div className="filters" role="group" aria-label={lang === "en" ? "Equipment categories" : "设备分类"}>
               {FILTERS.map((f) => (
                 <button key={f.value}
                   className={`filter ${selected === f.value ? 'active' : ''}`}
@@ -137,10 +137,11 @@ export default function Catalog() {
                 </button>
               ))}
             </div>
-            <input className="search" placeholder={t('catalog.search')} aria-label={t('catalog.search')}
+            <label className="sr-only" htmlFor="catalog-search">{t('catalog.search')}</label>
+            <input id="catalog-search" className="search" placeholder={t('catalog.search')} aria-label={t('catalog.search')}
               value={keyword} onChange={(e) => setKeyword(e.target.value)} />
           </div>
-          <p className="result-line">
+          <p className="result-line" role="status" aria-live="polite">
             <span>{t('catalog.result')}</span> <strong>{total}</strong> <span>{t('catalog.units')}</span>
           </p>
           {error && <p className="error">{error}</p>}
@@ -177,8 +178,8 @@ export default function Catalog() {
           {!error && total === 0 && <div className="empty">{t('catalog.empty')}</div>}
 
           {!error && totalPages > 1 && (
-            <nav className="pager" aria-label="pagination">
-              <button className="pager-btn" disabled={page <= 1} onClick={() => go(page - 1)}>
+            <nav className="pager" aria-label={lang === "en" ? "Pagination" : "分页"}>
+              <button type="button" className="pager-btn" aria-label={lang === "en" ? "Previous page" : "上一页"} disabled={page <= 1} onClick={() => go(page - 1)}>
                 ‹ <span>{t('catalog.prev')}</span>
               </button>
               {pageNumbers[0] > 1 && (
@@ -201,7 +202,7 @@ export default function Catalog() {
                   <button className="pager-btn" onClick={() => go(totalPages)}>{totalPages}</button>
                 </>
               )}
-              <button className="pager-btn" disabled={page >= totalPages} onClick={() => go(page + 1)}>
+              <button type="button" className="pager-btn" aria-label={lang === "en" ? "Next page" : "下一页"} disabled={page >= totalPages} onClick={() => go(page + 1)}>
                 <span>{t('catalog.next')}</span> ›
               </button>
             </nav>
