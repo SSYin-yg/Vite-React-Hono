@@ -73,14 +73,29 @@ app.get('/api/images/*', async (c) => {
         : 'jpeg';
 
   try {
+    const widthParam = url.searchParams.get('w') ?? url.searchParams.get('width');
+    const width = widthParam === 'auto'
+      ? 'auto'
+      : (() => {
+          const n = Number(widthParam);
+          if (!Number.isFinite(n) || n <= 0) return 'auto';
+          const allowed = [320, 480, 640, 768, 960, 1200, 1600, 1920];
+          return allowed.reduce((best, candidate) =>
+            Math.abs(candidate - n) < Math.abs(best - n) ? candidate : best, 320);
+        })();
+    const qualityParam = url.searchParams.get('q') ?? url.searchParams.get('quality');
+    const quality = ['low', 'medium-low', 'medium-high', 'high'].includes(qualityParam ?? '')
+      ? qualityParam as 'low' | 'medium-low' | 'medium-high' | 'high'
+      : 'medium-high';
+
     const transformed = await fetch(request, {
       cf: {
         image: {
-          width: 'auto',
+          width,
           fit: 'scale-down',
           format,
-          quality: 'medium-high',
-          wbreakpoints: '320;768;960;1200;1600',
+          quality,
+          wbreakpoints: '320;480;640;768;960;1200;1600;1920',
           wmobile: 768,
           wdesktop: 1600,
         },
@@ -90,7 +105,7 @@ app.get('/api/images/*', async (c) => {
     if (transformed.ok || transformed.status === 304) {
       const headers = new Headers(transformed.headers);
       headers.set('Cache-Control', IMAGE_CACHE_CONTROL);
-      headers.set('Vary', 'Accept');
+      headers.set('Vary', 'Accept, Sec-CH-Viewport-Width, DPR');
       headers.set('X-Content-Type-Options', 'nosniff');
       return new Response(transformed.body, {
         status: transformed.status,
