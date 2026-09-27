@@ -43,7 +43,7 @@ function Shell({ lang }: { lang: Lang }) {
     if ('requestIdleCallback' in window) {
       window.requestIdleCallback(load, { timeout: 3000 });
     } else {
-      timer = window.setTimeout(load, 2000);
+      timer = setTimeout(load, 2000);
     }
 
     return () => {
