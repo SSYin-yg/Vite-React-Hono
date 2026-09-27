@@ -131,7 +131,9 @@ export default function Catalog() {
             <div className="filters" role="group" aria-label={lang === "en" ? "Equipment categories" : "设备分类"}>
               {FILTERS.map((f) => (
                 <button key={f.value}
+                  type="button"
                   className={`filter ${selected === f.value ? 'active' : ''}`}
+                  aria-pressed={selected === f.value}
                   onClick={() => setSelected(f.value)}>
                   {t(f.key)}
                 </button>
