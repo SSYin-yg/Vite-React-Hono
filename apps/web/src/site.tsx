@@ -46,19 +46,43 @@ export function SiteProvider({
       .catch(() => setSettings({}));
   }, []);
 
-  // 注入 Google Ads（后台「站点设置」里的 google_ads_*）；配置为空时自动清理
+  // Google Ads 属于非首屏第三方资源：延迟到浏览器空闲/页面加载后再注入，
+  // 避免广告脚本与首屏 Hero、React 启动竞争移动端带宽和主线程。
   useEffect(() => {
     let alive = true;
-    getAdsConfig()
-      .then((cfg) => {
-        if (!alive) return;
-        syncGoogleAds(cfg);
-        setAdsReady(true);
-      })
-      .catch(() => {
-        if (alive) syncGoogleAds(null);
-      });
-    return () => { alive = false; };
+    let timer = 0;
+
+    const loadAds = () => {
+      getAdsConfig()
+        .then((cfg) => {
+          if (!alive) return;
+          syncGoogleAds(cfg);
+          setAdsReady(true);
+        })
+        .catch(() => {
+          if (alive) syncGoogleAds(null);
+        });
+    };
+
+    const schedule = () => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(loadAds, { timeout: 2500 });
+      } else {
+        timer = window.setTimeout(loadAds, 1500);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      schedule();
+    } else {
+      window.addEventListener('load', schedule, { once: true });
+    }
+
+    return () => {
+      alive = false;
+      window.removeEventListener('load', schedule);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   // SPA 路由变化 → 上报 page_view
