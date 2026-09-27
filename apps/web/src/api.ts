@@ -47,6 +47,23 @@ export type EquipmentPage = {
   totalPages: number;
 };
 
+/** R2 / Cloudflare Images 响应式图片地址。w 用于固定 CDN 变体，避免把完整原图直接发给小容器。 */
+export function imageUrl(src: string, width?: number): string {
+  if (!src) return '';
+  const path = src.startsWith('/') ? src : `/${src}`;
+  if (!path.startsWith('/api/images/')) return path;
+  if (!width) return path;
+  const params = new URLSearchParams({ w: String(width) });
+  return `${path}?${params.toString()}`;
+}
+
+export function imageSrcSet(src: string, widths = [320, 480, 768, 1200, 1600]): string {
+  if (!src) return '';
+  const path = src.startsWith('/') ? src : `/${src}`;
+  if (!path.startsWith('/api/images/')) return '';
+  return widths.map((w) => `${imageUrl(path, w)} ${w}w`).join(', ');
+}
+
 export async function listEquipments(category?: string): Promise<EquipmentSummary[]> {
   const qs = category ? `?category=${encodeURIComponent(category)}` : '';
   const res = await fetch(`/api/equipments${qs}`);
