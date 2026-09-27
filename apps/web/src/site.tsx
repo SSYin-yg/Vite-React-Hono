@@ -68,7 +68,7 @@ export function SiteProvider({
       if ('requestIdleCallback' in window) {
         window.requestIdleCallback(loadAds, { timeout: 2500 });
       } else {
-        timer = window.setTimeout(loadAds, 1500);
+        timer = setTimeout(loadAds, 1500);
       }
     };
 
