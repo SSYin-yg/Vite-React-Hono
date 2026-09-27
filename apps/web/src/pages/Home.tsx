@@ -62,8 +62,9 @@ export default function Home() {
         </div>
         <div className="hero-dots">
           {SLIDES.map((_, i) => (
-            <button key={i} type="button" className={`dot ${i === slide ? 'active' : ''`} data-slide={i}
+            <button key={i} type="button" className={`dot ${i === slide ? 'active' : ''}`} data-slide={i}
               aria-label={lang === "en" ? `Slide ${i + 1}` : `幻灯片 ${i + 1}`} aria-pressed={i === slide} onClick={() => setSlide(i)} />
+          ))}
         </div>
         <div className="shell">
           <div className="eyebrow"><span>{t('hero.eyebrow')}</span></div>
