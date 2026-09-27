@@ -34,14 +34,14 @@ export default function Terms() {
   }, [lang]);
 
   return (
-    <main className="legal-page">
+    <main id="main-content" className="legal-page" aria-labelledby="terms-title">
       <section className="catalog-hero legal-hero">
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{lang === 'en' ? 'Terms of Use' : '使用条款'}</span>
           </div>
           <div className="eyebrow">{lang === 'en' ? 'LEGAL' : '法律信息'}</div>
-          <h1>{lang === 'en' ? 'Terms of Use' : '使用条款'}</h1>
+          <h1 id="terms-title">{lang === 'en' ? 'Terms of Use' : '使用条款'}</h1>
           <p>{lang === 'en' ? 'Rules for using the Minelink Equipment website and its product information.' : '矿联矿机网站及其产品信息的使用规则。'}</p>
         </div>
       </section>
