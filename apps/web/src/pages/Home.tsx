@@ -47,7 +47,7 @@ export default function Home() {
   );
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="home-title">
       <section className="hero">
         <div className="hero-slides">
           {SLIDES.map((src, i) => (
@@ -68,7 +68,7 @@ export default function Home() {
         </div>
         <div className="shell">
           <div className="eyebrow"><span>{t('hero.eyebrow')}</span></div>
-          <h1><span>{t('hero.title')}</span></h1>
+          <h1 id="home-title"><span>{t('hero.title')}</span></h1>
           <p className="hero-copy">{t('hero.copy')}</p>
           <div className="hero-actions">
             <button className="primary" onClick={() => openQuote()}><span>{t('hero.cta1')}</span></button>
