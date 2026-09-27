@@ -116,8 +116,8 @@ export default function EquipmentDetail() {
 
         {/* h 标签导航：由页面实际渲染的 h2/h3 生成，点击跳转对应锚点 */}
         {toc.length >= 2 && (
-          <nav className="detail-toc" aria-label={L.toc}>
-            <span className="detail-toc-title">{L.toc}</span>
+          <nav className="detail-toc" aria-labelledby="detail-toc-title">
+            <span id="detail-toc-title" className="detail-toc-title">{L.toc}</span>
             <ul>
               {toc.map((it) => (
                 <li key={it.id} className={it.sub ? 'is-sub' : undefined}>
@@ -130,8 +130,8 @@ export default function EquipmentDetail() {
 
         {/* 产品介绍：每个段落块渲染为 h3（锚点）+ 正文 */}
         {intro.length > 0 && (
-          <section className="detail-section" id="intro">
-            <h2>{L.intro}</h2>
+          <section className="detail-section" id="intro" aria-labelledby="intro-title">
+            <h2 id="intro-title">{L.intro}</h2>
             {intro.map((b, i) => {
               const heading = (zh ? b.title_zh : b.title_en).trim();
               const body = (zh ? b.body_zh : b.body_en).trim();
@@ -151,13 +151,13 @@ export default function EquipmentDetail() {
         )}
 
         {specs.length > 0 && (
-          <section className="detail-section" id="specs">
-            <h2>{L.specs}</h2>
-            <table className="spec-table">
+          <section className="detail-section" id="specs" aria-labelledby="specs-title">
+            <h2 id="specs-title">{L.specs}</h2>
+            <table className="spec-table" aria-label={L.specs}>
               <tbody>
                 {specs.map((s, i) => (
                   <tr key={i}>
-                    <th>{zh ? s.k_zh : s.k_en}</th>
+                    <th scope="row">{zh ? s.k_zh : s.k_en}</th>
                     <td>{s.v}</td>
                   </tr>
                 ))}
@@ -167,12 +167,12 @@ export default function EquipmentDetail() {
         )}
 
         {modelTables.map((tb, i) => (
-          <section className="detail-section" id={`models-${i + 1}`} key={i}>
-            <h2>{(zh ? tb.title_zh : tb.title_en) || `${L.models} ${i + 1}`}</h2>
+          <section className="detail-section" id={`models-${i + 1}`} aria-labelledby={`model-title-${i + 1}`} key={i}>
+            <h2 id={`model-title-${i + 1}`}>{(zh ? tb.title_zh : tb.title_en) || `${L.models} ${i + 1}`}</h2>
             <div className="table-scroll">
               <table className="spec-table">
                 <thead>
-                  <tr>{tb.columns.map((c, j) => <th key={j}>{zh ? c.zh : c.en}</th>)}</tr>
+                  <tr>{tb.columns.map((c, j) => <th key={j} scope="col">{zh ? c.zh : c.en}</th>)}</tr>
                 </thead>
                 <tbody>
                   {tb.rows.map((row, j) => (
@@ -184,8 +184,8 @@ export default function EquipmentDetail() {
           </section>
         ))}
 
-        <section className="detail-section" id="inquiry">
-          <h2>{L.inquiry}</h2>
+        <section className="detail-section" id="inquiry" aria-labelledby="inquiry-title">
+          <h2 id="inquiry-title">{L.inquiry}</h2>
           <InquiryForm equipment={item.id} />
           <button type="button" className="primary" style={{ marginTop: 16 }} onClick={() => openQuote(name)}>
             {t('nav.quote')}
