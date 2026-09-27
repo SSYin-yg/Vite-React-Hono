@@ -18,14 +18,14 @@ export default function About() {
   }, [base]);
 
   return (
-    <main>
+    <main id="main-content" aria-labelledby="about-page-title">
       <section className="catalog-hero" style={{ backgroundImage: HERO_BG }}>
         <div className="shell">
           <div className="breadcrumb">
             <Link to={`${base}/`}>{t('nav.home')}</Link>　/　<span>{t('nav.about')}</span>
           </div>
           <div className="eyebrow"><span>{t('about.label')}</span></div>
-          <h1>{t('about.title')}</h1>
+          <h1 id="about-page-title">{t('about.title')}</h1>
           <p><span>{t('about.copy')}</span></p>
         </div>
       </section>
