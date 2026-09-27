@@ -1,248 +1,235 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://www.b2b-ssyin033.top/.well-known/ai-catalog.schema.json",
-  "title": "Minelink AI Catalog",
-  "description": "Machine-readable catalog and content discovery format for Minelink Equipment.",
+  "$id": "https://raw.githubusercontent.com/ards-project/ard-spec/main/spec/schemas/ai-catalog.schema.json",
+  "title": "AICatalogManifest",
+  "description": "JSON Schema for the ai-catalog.json capability manifest, defining how AI artifacts are advertised.",
   "type": "object",
-  "required": [
-    "schema_version",
-    "schema_name",
-    "generated_at",
-    "language",
-    "site",
-    "discovery",
-    "pages",
-    "categories",
-    "products",
-    "policies"
-  ],
+  "required": ["specVersion", "entries"],
   "properties": {
-    "schema_version": {
-      "type": "string"
-    },
-    "schema_name": {
-      "const": "Minelink AI Catalog"
-    },
-    "generated_at": {
+    "specVersion": {
       "type": "string",
-      "format": "date-time"
+      "description": "Version of the ai-catalog specification used in this manifest.",
+      "enum": ["1.0"]
     },
-    "language": {
-      "enum": [
-        "zh",
-        "en"
-      ]
-    },
-    "site": {
+    "host": {
       "type": "object",
-      "required": [
-        "name",
-        "url",
-        "description"
+      "description": "Information about the catalog publisher or hosting entity.",
+      "required": ["displayName"],
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable name of the host."
+        },
+        "identifier": {
+          "type": "string",
+          "description": "Cryptographic or verifiable identifier of the host (e.g. did:web:domain.com)."
+        },
+        "documentationUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to publisher documentation."
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the publisher's logo image."
+        },
+        "trustManifest": {
+          "$ref": "#/$defs/trustManifest"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entries": {
+      "type": "array",
+      "description": "List of AI agent or capability catalog entries.",
+      "items": {
+        "$ref": "#/$defs/catalogEntry"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "catalogEntry": {
+      "type": "object",
+      "description": "A single AI capability entry within the catalog.",
+      "required": ["identifier", "displayName", "type"],
+      "oneOf": [
+        {
+          "required": ["url"],
+          "not": { "required": ["data"] }
+        },
+        {
+          "required": ["data"],
+          "not": { "required": ["url"] }
+        }
       ],
       "properties": {
-        "name": {
-          "type": "string"
+        "identifier": {
+          "type": "string",
+          "pattern": "^urn:air:[a-zA-Z0-9.-]+(:[a-zA-Z0-9._-]+)+$",
+          "description": "RFC 8141-compliant unique logical URN formatted as: urn:air:<publisher>:<namespace>:<agent-name>"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-friendly display name."
+        },
+        "type": {
+          "type": "string",
+          "description": "IANA Media Type indicating the specific protocol wrapper or payload structure (e.g. application/mcp-server-card+json)."
         },
         "url": {
           "type": "string",
-          "format": "uri"
+          "format": "uri",
+          "description": "HTTP URL reference to retrieve the full artifact document."
+        },
+        "data": {
+          "type": "object",
+          "description": "Embedded JSON object containing the complete artifact specification inline."
         },
         "description": {
-          "type": "string"
-        }
-      }
-    },
-    "discovery": {
-      "type": "object",
-      "required": [
-        "llms_txt",
-        "sitemap",
-        "robots",
-        "current_catalog"
-      ],
-      "properties": {
-        "llms_txt": {
           "type": "string",
-          "format": "uri"
+          "description": "Brief natural-language description of the capability."
         },
-        "sitemap": {
-          "type": "string",
-          "format": "uri"
-        },
-        "robots": {
-          "type": "string",
-          "format": "uri"
-        },
-        "current_catalog": {
-          "type": "string",
-          "format": "uri"
-        }
-      }
-    },
-    "pages": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "path",
-          "title",
-          "description",
-          "format"
-        ],
-        "properties": {
-          "path": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "format": {
-            "type": "object",
-            "required": [
-              "html",
-              "markdown"
-            ],
-            "properties": {
-              "html": {
-                "type": "string",
-                "format": "uri"
-              },
-              "markdown": {
-                "type": "string",
-                "format": "uri"
-              }
-            }
-          }
-        }
-      }
-    },
-    "categories": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "products": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "category",
-          "summary",
-          "urls"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string"
-          },
-          "category_name": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "features": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "specifications": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "parameter",
-                "value"
-              ],
-              "properties": {
-                "parameter": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "model_tables": {
-            "type": "array"
-          },
-          "urls": {
-            "type": "object",
-            "required": [
-              "html",
-              "markdown",
-              "alternate_language"
-            ],
-            "properties": {
-              "html": {
-                "type": "string",
-                "format": "uri"
-              },
-              "markdown": {
-                "type": "string",
-                "format": "uri"
-              },
-              "alternate_language": {
-                "type": "string",
-                "format": "uri"
-              }
-            }
-          },
-          "keywords": {
-            "type": "string"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uri"
-            }
-          }
-        }
-      }
-    },
-    "policies": {
-      "type": "object",
-      "properties": {
-        "admin": {
+        "tags": {
           "type": "array",
-          "items": {
-            "type": "string"
+          "items": { "type": "string" },
+          "description": "Tags or keywords for basic categorizing and filtering."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicit high-performance indexing tags representing skills, tools, or functions (e.g. ['WeatherTool', 'ForecastTool'])."
+        },
+        "representativeQueries": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 5,
+          "items": { "type": "string" },
+          "description": "Representative natural-language search queries used for indexing and vector embedding generation."
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version of the capability."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of the last modification."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary key-value pairs for custom extensions.",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
           }
         },
-        "api": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "trustManifest": {
+          "$ref": "#/$defs/trustManifest"
         }
       }
+    },
+    "trustManifest": {
+      "type": "object",
+      "description": "Zero-trust security, identity, and compliance envelope metadata.",
+      "required": ["identity"],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "description": "Globally unique cryptographic workload identifier principal (e.g. SPIFFE ID or DID URI)."
+        },
+        "identityType": {
+          "type": "string",
+          "enum": ["spiffe", "did", "https", "other"],
+          "description": "Hint representing the cryptographic format of the identity."
+        },
+        "trustSchema": {
+          "$ref": "#/$defs/trustSchema"
+        },
+        "attestations": {
+          "type": "array",
+          "description": "List of verifiable claims (SOC 2 audits, compliance statements, HIPAA checks).",
+          "items": {
+            "type": "object",
+            "required": ["type", "uri", "mediaType"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Attestation standard type (e.g., SOC2-Type2, HIPAA)."
+              },
+              "uri": {
+                "type": "string",
+                "format": "uri",
+                "description": "Location of the attestation certificate or document."
+              },
+              "mediaType": {
+                "type": "string",
+                "description": "Format of the attestation document (e.g. application/pdf, text/html)."
+              },
+              "digest": {
+                "type": "string",
+                "description": "Cryptographic sha256 digest for document integrity verification."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "provenance": {
+          "type": "array",
+          "description": "Cryptographic lineage trail of the artifact.",
+          "items": {
+            "type": "object",
+            "required": ["relation", "sourceId"],
+            "properties": {
+              "relation": {
+                "type": "string",
+                "enum": ["derivedFrom", "publishedFrom", "copiedFrom"],
+                "description": "Lineage relation."
+              },
+              "sourceId": {
+                "type": "string",
+                "description": "Identifier of the source artifact."
+              },
+              "sourceDigest": {
+                "type": "string",
+                "description": "Optional sha256 digest for safety."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "signature": {
+          "type": "string",
+          "description": "Detached JWS signature generated over the fields of the trustManifest."
+        }
+      },
+      "additionalProperties": false
+    },
+    "trustSchema": {
+      "type": "object",
+      "description": "Describes the trust framework applied to the artifact.",
+      "required": ["identifier", "version"],
+      "properties": {
+        "identifier": {
+          "type": "string",
+          "description": "Unique identifier of the trust schema/framework (e.g. URN)."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the trust schema/framework."
+        },
+        "governanceUri": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI pointing to the governance policy document."
+        },
+        "verificationMethods": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Verification methods supported by the schema (e.g., ['did', 'x509', 'dns-01'])."
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
