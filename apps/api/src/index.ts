@@ -86,7 +86,7 @@ const llmsLinks = (path: string): { markdown: string; index: string } | null => 
   if (!path || path === '/llms.txt' || path === '/en/llms.txt' || path.endsWith('.md') || path.endsWith('.txt')) return null;
   if (path.startsWith('/api/') || path === '/health' || path.startsWith('/admin') || path.startsWith('/en/admin')) return null;
   const index = path === '/en' || path.startsWith('/en/') ? '/en/llms.txt' : '/llms.txt';
-  const markdown = path === '/' ? '/index.md' : path === '/en' ? '/en/index.md' : path.replace(/\\/$/, '') + '.md';
+  const markdown = path === '/' ? '/index.md' : path === '/en' ? '/en/index.md' : path.replace(/\/$/, '') + '.md';
   return { markdown, index };
 };
 
