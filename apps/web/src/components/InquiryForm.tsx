@@ -48,47 +48,53 @@ export default function InquiryForm({ equipment }: { equipment?: string }) {
   if (state === 'done') return <p className="ok">{t('modal.success')}</p>;
 
   return (
-    <form className="inquiry-form" onSubmit={onSubmit} noValidate>
-      <label>{t('modal.name')}
+    <form className="inquiry-form" aria-label={zh ? "询盘表单" : "Inquiry form"} onSubmit={onSubmit} noValidate>
+      <label htmlFor="inquiry-customer-name">{t('modal.name')}
         <input
-          name="customer_name"
+          id="inquiry-customer-name" name="customer_name"
           value={form.customer_name}
           onChange={(e) => set('customer_name', e.target.value)}
           maxLength={100}
           aria-invalid={!!fieldErr.customer_name}
+          aria-describedby={fieldErr.customer_name ? "inquiry-customer-name-error" : undefined}
+          aria-required="true"
         />
-        {fieldErr.customer_name && <span className="field-error">{fieldErr.customer_name}</span>}
+        {fieldErr.customer_name && <span id="inquiry-customer-name-error" className="field-error" role="alert">{fieldErr.customer_name}</span>}
       </label>
-      <label>{t('modal.email')}
+      <label htmlFor="inquiry-email">{t('modal.email')}
         <input
-          name="email"
+          id="inquiry-email" name="email"
           type="email"
           value={form.email}
           onChange={(e) => set('email', e.target.value)}
           maxLength={200}
           aria-invalid={!!fieldErr.email}
+          aria-describedby={fieldErr.email ? "inquiry-email-error" : undefined}
         />
-        {fieldErr.email && <span className="field-error">{fieldErr.email}</span>}
+        {fieldErr.email && <span id="inquiry-email-error" className="field-error" role="alert">{fieldErr.email}</span>}
       </label>
-      <label>{t('modal.phone')}
-        <input name="whatsapp" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} maxLength={100} />
+      <label htmlFor="inquiry-whatsapp">{t('modal.phone')}
+        <input id="inquiry-whatsapp" name="whatsapp" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} maxLength={100} />
       </label>
-      <label>{t('modal.region')}
-        <input name="country" value={form.country} onChange={(e) => set('country', e.target.value)} maxLength={100} />
+      <label htmlFor="inquiry-country">{t('modal.region')}
+        <input id="inquiry-country" name="country" value={form.country} onChange={(e) => set('country', e.target.value)} maxLength={100} />
       </label>
-      <label className="wide">{t('modal.message')}
+      <label className="wide" htmlFor="inquiry-message">{t('modal.message')}
         <textarea
+          id="inquiry-message"
           name="message"
           rows={4}
           value={form.message}
           onChange={(e) => set('message', e.target.value)}
           maxLength={5000}
           aria-invalid={!!fieldErr.message}
+          aria-describedby={fieldErr.message ? "inquiry-message-error" : undefined}
+          aria-required="true"
         />
-        {fieldErr.message && <span className="field-error">{fieldErr.message}</span>}
+        {fieldErr.message && <span id="inquiry-message-error" className="field-error" role="alert">{fieldErr.message}</span>}
         <span className="char-count">{form.message.length}/5000</span>
       </label>
-      {error && <p className="error wide">{error}</p>}
+      {error && <p className="error wide" role="alert" aria-live="assertive">{error}</p>}
       <button type="submit" disabled={state === 'sending'}>
         {state === 'sending' ? (zh ? '提交中…' : 'Sending…') : zh ? '提交询盘' : 'Submit inquiry'}
       </button>
