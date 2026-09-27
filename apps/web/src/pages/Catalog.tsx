@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listEquipmentsPage, type EquipmentSummary } from '../api';
+import { imageSrcSet, imageUrl, listEquipmentsPage, type EquipmentSummary } from '../api';
 import { useSite } from '../site';
 import { HERO_IMAGES } from '../i18n';
 import { setMetaDescription } from '../seo';
@@ -157,7 +157,14 @@ export default function Catalog() {
                     <div className="card-art" data-index={idx}>
                       {p.images[0] && (
                         <>
-                          <img src={`/${p.images[0]}`} alt={name} loading="lazy" />
+                          <img
+                            src={imageUrl(p.images[0], 320)}
+                            srcSet={imageSrcSet(p.images[0], [320, 480, 768])}
+                            sizes="(max-width: 780px) 100vw, (max-width: 1100px) 50vw, 33vw"
+                            alt={name}
+                            loading="lazy"
+                            decoding="async"
+                          />
                           <span className="card-art-fallback" data-index={idx} />
                         </>
                       )}
